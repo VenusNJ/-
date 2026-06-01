@@ -1,0 +1,2788 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>建筑形体生成器</title>
+  <style>
+:root {
+  color-scheme: light;
+  font-family:
+    Inter, "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #18212f;
+  background: #eef2f4;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: #eef2f4;
+}
+
+@media (min-width: 861px) {
+  body {
+    overflow: hidden;
+  }
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  border: 0;
+  cursor: pointer;
+}
+
+.shell {
+  display: grid;
+  grid-template-columns: minmax(320px, 390px) minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+@media (min-width: 861px) {
+  .shell {
+    height: 100vh;
+    overflow: hidden;
+  }
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  min-height: 100vh;
+  padding: 22px;
+  overflow-y: auto;
+  background: #fbfbf8;
+  border-right: 1px solid #d9dedc;
+}
+
+@media (min-width: 861px) {
+  .panel {
+    height: 100vh;
+  }
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mark {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, transparent 40%, rgba(255, 255, 255, 0.4) 41%),
+    linear-gradient(140deg, #4f8c7b, #d96f4a);
+  box-shadow: inset 0 0 0 1px rgba(24, 33, 47, 0.14);
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: 20px;
+  line-height: 1.2;
+  letter-spacing: 0;
+}
+
+.brand p {
+  margin-top: 4px;
+  color: #65717d;
+  font-size: 13px;
+}
+
+.controls {
+  display: grid;
+  gap: 14px;
+}
+
+.inlineGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+label {
+  display: grid;
+  gap: 7px;
+  color: #44515e;
+  font-size: 13px;
+}
+
+input,
+select {
+  width: 100%;
+  height: 42px;
+  border: 1px solid #cbd3d1;
+  border-radius: 8px;
+  padding: 0 12px;
+  color: #17202c;
+  background: #ffffff;
+  outline: none;
+}
+
+input:focus,
+select:focus {
+  border-color: #4f8c7b;
+  box-shadow: 0 0 0 3px rgba(79, 140, 123, 0.16);
+}
+
+input[type="range"] {
+  height: 24px;
+  padding: 0;
+  accent-color: #4f8c7b;
+}
+
+output {
+  justify-self: end;
+  color: #65717d;
+  font-size: 12px;
+}
+
+.segmented {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 4px;
+  border: 1px solid #cbd3d1;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.segmented label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  border-radius: 6px;
+  color: #44515e;
+}
+
+.segmented input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.segmented label:has(input:checked) {
+  color: #ffffff;
+  background: #356e62;
+}
+
+.siteEditor {
+  display: grid;
+  gap: 9px;
+}
+
+.siteEditor[hidden] {
+  display: none;
+}
+
+.siteEditor svg {
+  width: 100%;
+  height: auto;
+  min-height: 170px;
+  border-radius: 8px;
+  background: #eef2f4;
+  cursor: crosshair;
+  touch-action: manipulation;
+}
+
+.siteEditor rect {
+  fill: #f7faf8;
+  stroke: #cbd3d1;
+}
+
+.siteEditor .sketchLine {
+  fill: rgba(79, 140, 123, 0.16);
+  stroke: #356e62;
+  stroke-width: 2;
+}
+
+.siteEditor circle {
+  fill: #d96f4a;
+  stroke: #ffffff;
+  stroke-width: 2;
+  cursor: grab;
+}
+
+.siteEditor circle.selected {
+  fill: #356e62;
+  stroke: #f1b36d;
+  stroke-width: 3;
+}
+
+.siteEditor text {
+  fill: #44515e;
+  font-size: 11px;
+  user-select: none;
+}
+
+.siteEditor p {
+  color: #65717d;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.buttonRow {
+  display: grid;
+  grid-template-columns: 1fr 112px;
+  gap: 10px;
+}
+
+.buttonRow button,
+#loadMoreButton,
+#exportStlButton {
+  height: 42px;
+  border-radius: 8px;
+  color: #22303b;
+  background: #e7ece8;
+  box-shadow: inset 0 0 0 1px rgba(24, 33, 47, 0.08);
+}
+
+.buttonRow .primary {
+  color: #ffffff;
+  background: #356e62;
+}
+
+.buttonRow button:hover:hover,
+#loadMoreButton:hover,
+#exportStlButton:hover {
+  filter: brightness(0.97);
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.metrics article {
+  min-height: 76px;
+  padding: 13px;
+  border: 1px solid #dce2df;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.metrics span {
+  display: block;
+  color: #65717d;
+  font-size: 12px;
+}
+
+.metrics strong {
+  display: block;
+  margin-top: 8px;
+  color: #18212f;
+  font-size: 20px;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.options {
+  display: grid;
+  gap: 10px;
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sectionActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+h2 {
+  font-size: 15px;
+}
+
+#loadMoreButton,
+#exportStlButton {
+  width: 92px;
+  height: 34px;
+  font-size: 12px;
+}
+
+#loadMoreButton {
+  width: 82px;
+}
+
+#resetSiteButton {
+  width: 68px;
+  height: 30px;
+  border-radius: 8px;
+  color: #22303b;
+  background: #e7ece8;
+  box-shadow: inset 0 0 0 1px rgba(24, 33, 47, 0.08);
+  font-size: 12px;
+}
+
+#optionList {
+  display: grid;
+  gap: 9px;
+}
+
+.optionCounter {
+  padding: 8px 2px 2px;
+  color: #65717d;
+  font-size: 12px;
+  text-align: center;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 62px;
+  width: 100%;
+  padding: 11px 13px;
+  border: 1px solid #dde3df;
+  border-radius: 8px;
+  text-align: left;
+  color: #17202c;
+  background: #ffffff;
+}
+
+.option.active {
+  border-color: #356e62;
+  background: #eef6f2;
+}
+
+.option strong,
+.option em,
+.option b {
+  display: block;
+}
+
+.option strong {
+  font-size: 14px;
+}
+
+.option em {
+  margin-top: 4px;
+  color: #65717d;
+  font-size: 12px;
+  font-style: normal;
+  line-height: 1.35;
+}
+
+.option b {
+  flex: 0 0 auto;
+  color: #356e62;
+}
+
+.viewportArea {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-width: 0;
+  min-height: 100vh;
+  background: #eef2f4;
+}
+
+@media (min-width: 861px) {
+  .viewportArea {
+    height: 100vh;
+    min-height: 0;
+    overflow: hidden;
+  }
+}
+
+.topbar {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  min-height: 72px;
+  padding: 18px 24px;
+  border-bottom: 1px solid rgba(80, 100, 90, 0.22);
+  background: rgba(238, 242, 244, 0.86);
+  backdrop-filter: blur(12px);
+}
+
+.topbar strong,
+.topbar span {
+  display: block;
+}
+
+.topbar strong {
+  font-size: 20px;
+}
+
+.topbar div > span {
+  margin-top: 3px;
+  color: #65717d;
+  font-size: 13px;
+}
+
+.legend {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: #4c5864;
+  font-size: 12px;
+}
+
+.legend span {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.legend i {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.legend .site {
+  background: #dfe7df;
+}
+
+.legend .build {
+  background: #d96f4a;
+}
+
+.legend .void {
+  background: #8db89b;
+}
+
+.legend .roof {
+  background: #d7b86b;
+}
+
+#canvasHost {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+}
+
+#canvasHost canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.infoStrip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  border-top: 1px solid rgba(80, 100, 90, 0.2);
+  background: rgba(80, 100, 90, 0.2);
+}
+
+.infoStrip span {
+  min-height: 62px;
+  padding: 14px 16px;
+  overflow-wrap: anywhere;
+  color: #4c5864;
+  font-size: 13px;
+  background: rgba(251, 251, 248, 0.9);
+}
+
+.infoStrip b {
+  color: #18212f;
+}
+
+@media (max-width: 860px) {
+  .shell {
+    grid-template-columns: 1fr;
+  }
+
+  .panel {
+    min-height: auto;
+    border-right: 0;
+    border-bottom: 1px solid #d9dedc;
+  }
+
+  .viewportArea {
+    min-height: 650px;
+  }
+
+  .topbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .infoStrip {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .panel {
+    padding: 16px;
+  }
+
+  .buttonRow,
+  .inlineGrid,
+  .metrics,
+  .infoStrip {
+    grid-template-columns: 1fr;
+  }
+
+  .legend {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  #canvasHost {
+    min-height: 380px;
+  }
+}
+
+  </style>
+  <script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.181.2/build/three.module.js",
+    "three/examples/jsm/controls/OrbitControls.js": "https://unpkg.com/three@0.181.2/examples/jsm/controls/OrbitControls.js"
+  }
+}
+  </script>
+</head>
+<body>
+  <div id="app"></div>
+  <script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+
+const BUILDING_RULES = {
+  residential: {
+    label: "住宅",
+    floorHeight: 3.05,
+    minDepth: 10,
+    maxDepth: 18,
+    preferredFloors: [6, 33],
+    coverage: [0.18, 0.38],
+    palette: ["#d96f4a", "#f1b36d", "#6f9f79", "#547aa5", "#b8a07a"],
+    forms: ["slab", "lShape", "courtyard", "stepped", "pointBlock", "perimeterBlock", "cascade", "rotatedCluster", "slicedStack"],
+  },
+  office: {
+    label: "办公",
+    floorHeight: 4.15,
+    minDepth: 16,
+    maxDepth: 32,
+    preferredFloors: [5, 40],
+    coverage: [0.22, 0.50],
+    palette: ["#547aa5", "#8fc1d4", "#d4a84f", "#c96f5b", "#7b8fa0"],
+    forms: ["tower", "twinTower", "podiumTower", "interlock", "uShape", "hybrid", "stepped", "foldedPlate", "splitTower"],
+  },
+  commercial: {
+    label: "商业",
+    floorHeight: 5.0,
+    minDepth: 24,
+    maxDepth: 48,
+    preferredFloors: [1, 8],
+    coverage: [0.32, 0.65],
+    palette: ["#c34f5a", "#f0a55d", "#497b82", "#7b8f62", "#cc7744"],
+    forms: ["podium", "atrium", "ziggurat", "lShape", "uShape", "interlock", "bridge", "rotatedCluster", "foldedPlate"],
+  },
+  hotel: {
+    label: "酒店",
+    floorHeight: 3.45,
+    minDepth: 13,
+    maxDepth: 24,
+    preferredFloors: [6, 35],
+    coverage: [0.20, 0.44],
+    palette: ["#8769aa", "#d9b56f", "#496f8f", "#d77960", "#ad8b7a"],
+    forms: ["tower", "twinTower", "podiumTower", "uShape", "bridge", "stepped", "pointBlock", "splitTower", "horizontalMat", "graduatedSetback", "waistedTower", "slicedStack"],
+  },
+  culture: {
+    label: "文化公共建筑",
+    floorHeight: 5.4,
+    minDepth: 22,
+    maxDepth: 58,
+    preferredFloors: [1, 8],
+    coverage: [0.24, 0.58],
+    palette: ["#4f8c7b", "#d78262", "#667085", "#d4a84f", "#b5a07e"],
+    forms: ["atrium", "podium", "cluster", "ziggurat", "cascade", "cantilever", "hybrid", "rotatedCluster", "foldedPlate", "slicedStack"],
+  },
+};
+const ROOF_LABELS = {
+  auto: "自动",
+  flat: "平屋顶",
+  pitched: "坡屋顶",
+  terrace: "露台屋顶",
+  green: "绿化屋顶",
+  sawtooth: "锯齿屋顶",
+};
+
+const defaultSketchPoints = [
+  { x: 46, y: 34 },
+  { x: 286, y: 30 },
+  { x: 314, y: 140 },
+  { x: 206, y: 183 },
+  { x: 68, y: 164 },
+];
+
+const state = {
+  type: "office",
+  buildingArea: 42000,
+  siteArea: 18000,
+  siteRatio: 1.35,
+  siteMode: "rectangle",
+  sitePoints: defaultSketchPoints,
+  floorMode: "auto",
+  manualFloors: 0,
+  manualHeight: 0,
+  roofType: "auto",
+  selectedSitePoint: -1,
+  draggingSitePoint: false,
+  seed: Math.floor(Math.random() * 9999) + 1,
+  schemeCursor: 0,
+  optionIndex: 0,
+  generated: [],
+};
+
+const INITIAL_SCHEME_COUNT = 24;
+const MORE_SCHEME_COUNT = 16;
+
+const app = document.querySelector("#app");
+app.innerHTML = `
+  <main class="shell">
+    <aside class="panel" aria-label="生成控制">
+      <div class="brand">
+        <span class="mark"></span>
+        <div>
+          <h1>建筑形体生成器</h1>
+          <p>输入指标，生成可比较的概念体量</p>
+        </div>
+      </div>
+
+      <form id="generatorForm" class="controls">
+        <label>
+          <span>建筑类型</span>
+          <select name="type">
+            <option value="residential">住宅</option>
+            <option value="office" selected>办公</option>
+            <option value="commercial">商业</option>
+            <option value="hotel">酒店</option>
+            <option value="culture">文化公共建筑</option>
+          </select>
+        </label>
+
+        <div class="inlineGrid">
+          <label>
+            <span>建筑面积 m²</span>
+            <input name="buildingArea" type="number" min="100" step="100" value="42000" />
+          </label>
+          <label>
+            <span>场地面积 m²</span>
+            <input name="siteArea" type="number" min="100" step="100" value="18000" />
+          </label>
+        </div>
+
+        <label>
+          <span>基地形状</span>
+          <div class="segmented" role="group" aria-label="基地形状">
+            <label><input type="radio" name="siteMode" value="rectangle" checked />矩形</label>
+            <label><input type="radio" name="siteMode" value="free" />自由绘制</label>
+          </div>
+        </label>
+
+        <label id="ratioControl">
+          <span>矩形基地长宽比</span>
+          <input name="siteRatio" type="range" min="0.65" max="2.2" step="0.05" value="1.35" />
+          <output id="siteRatioOut">1.35</output>
+        </label>
+
+        <section class="siteEditor" id="siteEditor" hidden>
+          <div class="sectionTitle">
+            <h2>手绘基地</h2>
+            <button type="button" id="resetSiteButton">重画</button>
+          </div>
+          <svg id="siteSketch" viewBox="0 0 360 220" aria-label="点击绘制基地轮廓"></svg>
+          <p>点击空白处添加转角；点击已有点选择，拖动可调整位置，Backspace/Delete 删除选中点。</p>
+        </section>
+
+        <div class="inlineGrid">
+          <label>
+            <span>层数倾向</span>
+            <select name="floorMode">
+              <option value="auto" selected>自动</option>
+              <option value="low">低层</option>
+              <option value="mid">多层/中高层</option>
+              <option value="high">高层</option>
+            </select>
+          </label>
+          <label>
+            <span>屋顶类型</span>
+            <select name="roofType">
+              <option value="auto" selected>自动</option>
+              <option value="flat">平屋顶</option>
+              <option value="pitched">坡屋顶</option>
+              <option value="terrace">露台屋顶</option>
+              <option value="green">绿化屋顶</option>
+              <option value="sawtooth">锯齿屋顶</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="inlineGrid">
+          <label>
+            <span>建筑层数（可选）</span>
+            <input name="manualFloors" type="number" min="1" max="80" step="1" placeholder="自动" />
+          </label>
+          <label>
+            <span>建筑高度 m（可选）</span>
+            <input name="manualHeight" type="number" min="3" max="400" step="0.5" placeholder="自动" />
+          </label>
+        </div>
+
+        <div class="buttonRow">
+          <button type="submit" class="primary">生成形体</button>
+          <button type="button" id="shuffleButton">换一组</button>
+        </div>
+      </form>
+
+      <section class="metrics" id="metrics"></section>
+
+      <section class="options" aria-label="方案列表">
+        <div class="sectionTitle">
+          <h2>方案</h2>
+          <div class="sectionActions">
+            <button type="button" id="loadMoreButton">继续生成</button>
+            <button type="button" id="exportStlButton">导出 STL</button>
+          </div>
+        </div>
+        <div id="optionList"></div>
+      </section>
+    </aside>
+
+    <section class="viewportArea">
+      <div class="topbar">
+        <div>
+          <strong id="schemeTitle">方案 A</strong>
+          <span id="schemeSubtitle">正在生成</span>
+        </div>
+        <div class="legend">
+          <span><i class="site"></i>基地</span>
+          <span><i class="build"></i>体量</span>
+          <span><i class="void"></i>开放空间</span>
+          <span><i class="roof"></i>屋顶/退台</span>
+        </div>
+      </div>
+      <div id="canvasHost"></div>
+      <div class="infoStrip" id="infoStrip"></div>
+    </section>
+  </main>
+`;
+
+const form = document.querySelector("#generatorForm");
+const optionList = document.querySelector("#optionList");
+const metricsEl = document.querySelector("#metrics");
+const infoStrip = document.querySelector("#infoStrip");
+const ratioOut = document.querySelector("#siteRatioOut");
+const ratioControl = document.querySelector("#ratioControl");
+const siteEditor = document.querySelector("#siteEditor");
+const siteSketch = document.querySelector("#siteSketch");
+const schemeTitle = document.querySelector("#schemeTitle");
+const schemeSubtitle = document.querySelector("#schemeSubtitle");
+const canvasHost = document.querySelector("#canvasHost");
+
+let scene;
+let camera;
+let renderer;
+let controls;
+let currentGroup;
+let animationId;
+let resizeObserver;
+
+function createRandom(seed) {
+  let value = seed % 2147483647;
+  if (value <= 0) value += 2147483646;
+  return () => {
+    value = (value * 16807) % 2147483647;
+    return (value - 1) / 2147483646;
+  };
+}
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function randomBetween(rng, min, max) {
+  return min + (max - min) * rng();
+}
+
+function randomInt(rng, min, max) {
+  return Math.floor(randomBetween(rng, min, max + 1));
+}
+
+function pick(rng, items) {
+  return items[Math.floor(rng() * items.length) % items.length];
+}
+
+function formatNumber(value) {
+  return new Intl.NumberFormat("zh-CN", { maximumFractionDigits: 1 }).format(value);
+}
+
+function polygonArea(points) {
+  if (points.length < 3) return 0;
+  return Math.abs(
+    points.reduce((sum, point, index) => {
+      const next = points[(index + 1) % points.length];
+      return sum + point.x * next.y - next.x * point.y;
+    }, 0) / 2,
+  );
+}
+
+
+function pointInPolygon(px, pz, polygon) {
+  let inside = false;
+  const n = polygon.length;
+  for (let i = 0, j = n - 1; i < n; j = i++) {
+    const xi = polygon[i].x, zi = polygon[i].z;
+    const xj = polygon[j].x, zj = polygon[j].z;
+    if (((zi > pz) !== (zj > pz)) && (px < (xj - xi) * (pz - zi) / (zj - zi) + xi)) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
+function isBlockInsideSite(block, site) {
+  if (site.mode === "rectangle") return true;
+  const hw = block.w / 2;
+  const hl = block.l / 2;
+  const corners = [
+    { x: block.x - hw, z: block.z - hl },
+    { x: block.x + hw, z: block.z - hl },
+    { x: block.x + hw, z: block.z + hl },
+    { x: block.x - hw, z: block.z + hl },
+  ];
+  return corners.every(c => pointInPolygon(c.x, c.z, site.points));
+}
+
+function clampBlockToSite(block, site, buildableW, buildableL) {
+  if (site.mode !== "free") return false;
+  if (isBlockInsideSite(block, site)) return false;
+  const origW = block.w, origL = block.l;
+  const hw = block.w / 2, hl = block.l / 2;
+  // Try 40 attempts: first shift only, then shift + scale down
+  for (let attempt = 0; attempt < 40; attempt++) {
+    const scaleDown = attempt < 20 ? 1.0 : (1.0 - (attempt - 20) * 0.04);
+    const sw = origW * scaleDown;
+    const sl = origL * scaleDown;
+    const shw = sw / 2, shl = sl / 2;
+    const tx = clamp(block.x + (Math.random() - 0.5) * buildableW * 0.6, -buildableW / 2 + shw, buildableW / 2 - shw);
+    const tz = clamp(block.z + (Math.random() - 0.5) * buildableL * 0.6, -buildableL / 2 + shl, buildableL / 2 - shl);
+    const tempBlock = { x: tx, z: tz, w: sw, l: sl };
+    if (isBlockInsideSite(tempBlock, site)) {
+      block.x = tx;
+      block.z = tz;
+      block.w = sw;
+      block.l = sl;
+      return true;
+    }
+  }
+  // Last resort: scale down to 60% at center
+  block.w = origW * 0.6;
+  block.l = origL * 0.6;
+  block.x = 0;
+  block.z = 0;
+  return true;
+}
+function pointBounds(points) {
+  const xs = points.map((point) => point.x);
+  const ys = points.map((point) => point.y);
+  return {
+    minX: Math.min(...xs),
+    maxX: Math.max(...xs),
+    minY: Math.min(...ys),
+    maxY: Math.max(...ys),
+  };
+}
+
+function createSite(input) {
+  if (input.siteMode === "free" && input.sitePoints.length >= 3 && polygonArea(input.sitePoints) > 10) {
+    const bounds = pointBounds(input.sitePoints);
+    const centerX = (bounds.minX + bounds.maxX) / 2;
+    const centerY = (bounds.minY + bounds.maxY) / 2;
+    const scale = Math.sqrt(input.siteArea / polygonArea(input.sitePoints));
+    const points = input.sitePoints.map((point) => ({
+      x: (point.x - centerX) * scale,
+      z: (point.y - centerY) * scale,
+    }));
+    return {
+      mode: "free",
+      points,
+      width: (bounds.maxX - bounds.minX) * scale,
+      length: (bounds.maxY - bounds.minY) * scale,
+    };
+  }
+
+  const width = Math.sqrt(input.siteArea / input.siteRatio);
+  const length = width * input.siteRatio;
+  return {
+    mode: "rectangle",
+    width,
+    length,
+    points: [
+      { x: -width / 2, z: -length / 2 },
+      { x: width / 2, z: -length / 2 },
+      { x: width / 2, z: length / 2 },
+      { x: -width / 2, z: length / 2 },
+    ],
+  };
+}
+
+function getFloorRange(input, rules, far) {
+  if (input.manualFloors > 0) return [input.manualFloors, input.manualFloors];
+  if (input.manualHeight > 0) {
+    const floors = Math.max(1, Math.round(input.manualHeight / rules.floorHeight));
+    return [floors, floors];
+  }
+  if (input.floorMode === "low") return [1, Math.min(6, rules.preferredFloors[1])];
+  if (input.floorMode === "mid") return [6, Math.min(16, Math.max(8, rules.preferredFloors[1]))];
+  if (input.floorMode === "high") return [16, Math.max(24, rules.preferredFloors[1])];
+  const target = Math.sqrt(far) * 7 + rules.preferredFloors[0];
+  return [
+    clamp(Math.round(target * 0.7), rules.preferredFloors[0], rules.preferredFloors[1]),
+    clamp(Math.round(target * 1.25), rules.preferredFloors[0], rules.preferredFloors[1]),
+  ];
+}
+
+function chooseRoof(input, form, index) {
+  if (input.roofType !== "auto") return input.roofType;
+  const towerLike = ["tower", "podiumTower", "twinTower", "pointBlock"];
+  if (towerLike.includes(form)) {
+    return ["flat", "terrace", "green", "flat"][index % 4];
+  }
+  if (form === "cascade" || form === "stepped" || form === "ziggurat") {
+    return ["terrace", "green", "terrace", "flat"][index % 4];
+  }
+  if (form === "slab" || form === "lShape" || form === "uShape" || form === "perimeterBlock") {
+    return ["flat", "pitched", "green", "terrace", "sawtooth"][index % 5];
+  }
+  return ["flat", "pitched", "terrace", "green", "sawtooth"][index % 5];
+}
+
+function generateSchemes(input, count = INITIAL_SCHEME_COUNT, startIndex = 0) {
+  const rules = BUILDING_RULES[input.type];
+  const site = createSite(input);
+  const far = input.buildingArea / input.siteArea;
+  const [minFloors, maxFloors] = getFloorRange(input, rules, far);
+  const rng = createRandom(input.seed + startIndex * 7919);
+
+  const newForms = ["horizontalMat", "graduatedSetback", "waistedTower", "rotatedCluster", "slicedStack", "foldedPlate", "splitTower"];
+  const stylePool = [
+    ...rules.forms,
+    "lShape",
+    "uShape",
+    "twinTower",
+    "pointBlock",
+    "cascade",
+    "ziggurat",
+    "hybrid",
+    "perimeterBlock",
+    "freeMix",
+    "multiInterlock",
+    "porousMat",
+    "cantileverChain",
+    "pinwheel",
+    "terraceVillage", "rotatedCluster", "slicedStack", "foldedPlate", "splitTower", "horizontalMat", "graduatedSetback", "waistedTower",
+  ];
+
+  return Array.from({ length: count }, (_, localIndex) => {
+    const index = startIndex + localIndex;
+    let form;
+    // First 3 of each batch: bias toward new (data-trained) forms
+    if (localIndex < 3 && startIndex === 0) {
+      form = newForms[localIndex % newForms.length];
+    } else {
+      form = stylePool[(index + Math.floor(rng() * stylePool.length)) % stylePool.length];
+    }
+    const floorBias = (index % count) / Math.max(1, count - 1);
+    const proposedFloors = clamp(
+      Math.round(minFloors + (maxFloors - minFloors) * (0.18 + floorBias * 0.68 + rng() * 0.18)),
+      minFloors,
+      maxFloors,
+    );
+    const coverageTarget = clamp(input.buildingArea / proposedFloors / input.siteArea, rules.coverage[0], rules.coverage[1]);
+    const autoFloors = Math.max(1, Math.round(input.buildingArea / (coverageTarget * input.siteArea)));
+    const floors = input.manualFloors > 0 || input.manualHeight > 0 || input.floorMode !== "auto" ? proposedFloors : autoFloors;
+    const floorHeight = input.manualHeight > 0 ? input.manualHeight / floors : rules.floorHeight;
+    const height = input.manualHeight > 0 ? input.manualHeight : floors * floorHeight;
+    const footprint = input.buildingArea / floors;
+
+    return createMassing({
+      id: index,
+      name: `方案 ${String(index + 1).padStart(3, "0")}`,
+      rules,
+      type: input.type,
+      form,
+      mixComplexity: 3 + (index % 4),
+      roofType: chooseRoof(input, form, index),
+      buildingArea: input.buildingArea,
+      siteArea: input.siteArea,
+      site,
+      siteWidth: site.width,
+      siteLength: site.length,
+      floors,
+      floorHeight,
+      footprint,
+      coverage: footprint / input.siteArea,
+      far,
+      height,
+      rng: createRandom(input.seed + index * 1009 + localIndex * 101),
+    });
+  });
+}
+
+function createMassing(base) {
+  const margin = Math.max(10, Math.min(base.siteWidth, base.siteLength) * 0.10);
+  const buildableW = Math.max(12, base.siteWidth - margin * 2);
+  const buildableL = Math.max(12, base.siteLength - margin * 2);
+  const massing = {
+    ...base,
+    blocks: [],
+    openSpaces: [],
+    notes: [],
+    detailTags: [],
+  };
+
+  const creators = {
+    tower: createTower,
+    bar: createBars,
+    slab: createBars,
+    podium: createPodium,
+    atrium: createAtrium,
+    courtyard: createCourtyard,
+    cluster: createCluster,
+    podiumTower: createPodiumTower,
+    interlock: createInterlock,
+    cantilever: createCantilever,
+    stepped: createStepped,
+    bridge: createBridge,
+    lShape: createLShape,
+    uShape: createUShape,
+    twinTower: createTwinTower,
+    pointBlock: createPointBlock,
+    cascade: createCascade,
+    ziggurat: createZiggurat,
+    hybrid: createHybrid,
+    perimeterBlock: createPerimeterBlock,
+    rotatedCluster: createRotatedCluster,
+    slicedStack: createSlicedStack,
+    foldedPlate: createFoldedPlate,
+    splitTower: createSplitTower,
+    horizontalMat: createHorizontalMat,
+    graduatedSetback: createGraduatedSetback,
+    waistedTower: createWaistedTower,
+    freeMix: createFreeMix,
+    multiInterlock: createMultiInterlock,
+    porousMat: createPorousMat,
+    cantileverChain: createCantileverChain,
+    pinwheel: createPinwheel,
+    terraceVillage: createTerraceVillage,
+  };
+  creators[base.form]?.(massing, buildableW, buildableL);
+  addSecondaryFragments(massing, buildableW, buildableL);
+  resolveBlockCollisions(massing, buildableW, buildableL);
+  addDetailPass(massing);
+  return massing;
+}
+
+function addSecondaryFragments(massing, buildableW, buildableL) {
+  const richForms = ["freeMix", "multiInterlock", "porousMat", "cantileverChain", "terraceVillage", "rotatedCluster", "slicedStack", "foldedPlate", "splitTower", "horizontalMat", "graduatedSetback", "waistedTower", "pinwheel"];
+  const minimum = richForms.includes(massing.form)
+    ? randomInt(massing.rng, 6, 10)
+    : randomInt(massing.rng, 4, 7);
+  while (massing.blocks.length < minimum) {
+    const floors = randomInt(massing.rng, 1, Math.max(2, Math.min(5, massing.floors)));
+    const w = clamp(randomBetween(massing.rng, massing.rules.minDepth * 0.6, massing.rules.minDepth * 1.4), 7, buildableW * 0.22);
+    const l = clamp(randomBetween(massing.rng, massing.rules.minDepth * 0.6, massing.rules.minDepth * 1.4), 7, buildableL * 0.22);
+    addBlock(massing, {
+      x: randomBetween(massing.rng, -buildableW * 0.25, buildableW * 0.25),
+      z: randomBetween(massing.rng, -buildableL * 0.25, buildableL * 0.25),
+      w,
+      l,
+      floors,
+      yBase: 0,
+      label: pick(massing.rng, ["附属体块", "入口体块", "侧翼体块", "延伸体块"]),
+      roof: pick(massing.rng, ["flat", "terrace", massing.roofType]),
+      isSetback: massing.rng() > 0.55,
+    });
+  }
+}
+
+function blockRange(block) {
+  return {
+    minX: block.x - block.w / 2,
+    maxX: block.x + block.w / 2,
+    minZ: block.z - block.l / 2,
+    maxZ: block.z + block.l / 2,
+    minY: block.yBase,
+    maxY: block.yBase + block.h,
+  };
+}
+
+function rangesOverlap(aMin, aMax, bMin, bMax, gap = 0) {
+  return Math.min(aMax, bMax) - Math.max(aMin, bMin) > gap;
+}
+
+function blocksClash(a, b) {
+  const ar = blockRange(a);
+  const br = blockRange(b);
+  return (
+    rangesOverlap(ar.minX, ar.maxX, br.minX, br.maxX, 0.8) &&
+    rangesOverlap(ar.minZ, ar.maxZ, br.minZ, br.maxZ, 0.8) &&
+    rangesOverlap(ar.minY, ar.maxY, br.minY, br.maxY, 0.8)
+  );
+}
+
+function clampBlock(block, buildableW, buildableL) {
+  if (block.w > buildableW * 0.95) block.w = buildableW * 0.92;
+  if (block.l > buildableL * 0.95) block.l = buildableL * 0.92;
+  block.x = clamp(block.x, -buildableW / 2 + block.w / 2, buildableW / 2 - block.w / 2);
+  block.z = clamp(block.z, -buildableL / 2 + block.l / 2, buildableL / 2 - block.l / 2);
+}
+
+function resolveBlockCollisions(massing, buildableW, buildableL) {
+  massing.blocks.forEach((block) => {
+    if (block.w > buildableW * 0.94) block.w = buildableW * 0.92;
+    if (block.l > buildableL * 0.94) block.l = buildableL * 0.92;
+  });
+  massing.blocks.forEach((block) => clampBlock(block, buildableW, buildableL));
+  for (let pass = 0; pass < 9; pass += 1) {
+    let moved = false;
+    for (let i = 0; i < massing.blocks.length; i += 1) {
+      for (let j = i + 1; j < massing.blocks.length; j += 1) {
+        const a = massing.blocks[i];
+        const b = massing.blocks[j];
+        if (!blocksClash(a, b)) continue;
+        const ar = blockRange(a);
+        const br = blockRange(b);
+        const overlapX = Math.min(ar.maxX, br.maxX) - Math.max(ar.minX, br.minX);
+        const overlapZ = Math.min(ar.maxZ, br.maxZ) - Math.max(ar.minZ, br.minZ);
+        if (overlapX < overlapZ) {
+          const direction = b.x >= a.x ? 1 : -1;
+          b.x += direction * (overlapX + 2.2);
+        } else {
+          const direction = b.z >= a.z ? 1 : -1;
+          b.z += direction * (overlapZ + 2.2);
+        }
+        clampBlock(b, buildableW, buildableL);
+        moved = true;
+      }
+    }
+    if (!moved) break;
+  }
+
+  massing.blocks.forEach((block, index) => {
+    for (let attempts = 0; attempts < 8; attempts += 1) {
+      const hasClash = massing.blocks.some((other, otherIndex) => otherIndex < index && blocksClash(block, other));
+      if (!hasClash) break;
+      block.x = randomBetween(massing.rng, -buildableW * 0.38, buildableW * 0.38);
+      block.z = randomBetween(massing.rng, -buildableL * 0.38, buildableL * 0.38);
+      clampBlock(block, buildableW, buildableL);
+    }
+  });
+  
+  separateRemainingClashesVertically(massing);
+  if (massing.site && massing.site.mode === "free") {
+    massing.blocks.forEach(block => {
+      clampBlockToSite(block, massing.site, buildableW, buildableL);
+    });
+  }
+  massing.height = Math.max(massing.height, ...massing.blocks.map((block) => block.yBase + block.h));
+}
+
+function separateRemainingClashesVertically(massing) {
+  for (let pass = 0; pass < 12; pass += 1) {
+    let adjusted = false;
+    for (let i = 0; i < massing.blocks.length; i += 1) {
+      for (let j = i + 1; j < massing.blocks.length; j += 1) {
+        const lower = massing.blocks[i].yBase <= massing.blocks[j].yBase ? massing.blocks[i] : massing.blocks[j];
+        const upper = lower === massing.blocks[i] ? massing.blocks[j] : massing.blocks[i];
+        if (!blocksClash(lower, upper)) continue;
+        upper.yBase = Math.min(upper.yBase || 0, lower.yBase + lower.h + Math.min(massing.floorHeight * 2.5, massing.floorHeight * 3));
+        if (upper.yBase < lower.yBase + lower.h + 0.35) upper.yBase = lower.yBase + lower.h + 0.35;
+        if (upper.yBase > massing.floorHeight * 3 && upper.floorStart === 0) upper.yBase = 0;
+        upper.floorStart = Math.max(upper.floorStart || 0, Math.round(upper.yBase / massing.floorHeight));
+        upper.isSetback = true;
+        adjusted = true;
+      }
+    }
+    if (!adjusted) break;
+  }
+}
+
+function addBlock(massing, block) {
+  const floors = Math.max(1, Math.round(block.floors ?? block.h / massing.floorHeight));
+  const h = block.h ?? floors * massing.floorHeight;
+  massing.blocks.push({
+    color: massing.rules.palette[massing.blocks.length % massing.rules.palette.length],
+    yBase: 0,
+    floorStart: 0,
+    roof: massing.roofType,
+    isSetback: false,
+    ...block,
+    h,
+    floors,
+    // Enforce: no floating blocks unless part of a structural tier (has floorStart)
+    yBase: (block.floorStart > 0 || block.isSetback) ? (block.yBase || 0) : 0,
+  });
+}
+
+function addDetailPass(massing) {
+  const hasSetback = massing.blocks.some((block) => block.isSetback || block.floorStart > 0);
+  if (hasSetback) massing.detailTags.push("退台露台");
+  if (massing.blocks.some((block) => block.yBase > 0 && block.yBase > massing.floorHeight * 2)) massing.detailTags.push("架空/连桥");
+  if (massing.openSpaces.length > 0) massing.detailTags.push("庭院/广场");
+  massing.detailTags.push(ROOF_LABELS[massing.roofType]);
+  if (massing.blocks.length >= 5) massing.detailTags.push("复合体量");
+  if (massing.blocks.some((block) => block.w > 40 || block.l > 40)) massing.detailTags.push("大体量");
+  massing.detailTags.push("立面分缝");
+  const types = { residential: "居住尺度", office: "办公模数", commercial: "商业界面", hotel: "酒店品质", culture: "公共尺度" };
+  massing.detailTags.push(types[massing.type] || "通用");
+}
+
+function createTower(massing, buildableW, buildableL) {
+  const coreArea = massing.footprint * (0.58 + massing.rng() * 0.18);
+  const side = Math.sqrt(coreArea);
+  const w = clamp(side * (0.82 + massing.rng() * 0.25), massing.rules.minDepth * 0.9, buildableW * 0.40);
+  const l = clamp(coreArea / w, massing.rules.minDepth * 0.9, buildableL * 0.40);
+  const baseFloors = clamp(Math.round(massing.floors * (0.08 + massing.rng() * 0.12)), 1, 7);
+  const baseW = w * (1.2 + massing.rng() * 0.5);
+  const baseL = l * (1.1 + massing.rng() * 0.4);
+  addBlock(massing, { x: massing.rng() > 0.5 ? w * 0.1 : -w * 0.1, z: massing.rng() > 0.5 ? l * 0.1 : -l * 0.1, w: baseW, l: baseL, floors: baseFloors, label: "塔楼基座", roof: "terrace" });
+  
+  // Main shaft with optional mid-waist (learned from dataset: towers narrow 30-60% up)
+  const hasWaist = massing.floors > 18 && massing.rng() > 0.4;
+  if (hasWaist) {
+    const waistHeightFrac = 0.32 + massing.rng() * 0.20;
+    const waistStart = Math.round(massing.floors * waistHeightFrac);
+    const waistF = clamp(Math.round(massing.floors * 0.15), 3, Math.min(10, massing.floors - waistStart - 3));
+    const upperF = massing.floors - waistStart - waistF;
+    const waistW = w * (0.65 + massing.rng() * 0.18);
+    const waistL = l * (0.65 + massing.rng() * 0.18);
+    addBlock(massing, { x: 0, z: 0, w, l, floors: waistStart, label: "主塔楼下段" });
+    addBlock(massing, { x: 0, z: 0, w: waistW, l: waistL, floors: waistF, floorStart: waistStart, yBase: waistStart * massing.floorHeight, label: "收腰段", isSetback: true });
+    addBlock(massing, { x: 0, z: 0, w: waistW, l: waistL, floors: upperF, floorStart: waistStart + waistF, yBase: (waistStart + waistF) * massing.floorHeight, label: "上段塔楼", roof: massing.floors > 24 && massing.rng() > 0.45 ? "terrace" : massing.rng() > 0.5 ? "flat" : massing.roofType });
+  } else {
+    addBlock(massing, { x: massing.rng() > 0.5 ? w * 0.35 : -w * 0.35, z: massing.rng() > 0.5 ? l * 0.30 : -l * 0.30, w, l, floors: massing.floors, label: "主塔楼" });
+  }
+  
+  if (massing.floors > 24 && massing.rng() > 0.45) {
+    const crownF = clamp(Math.round(massing.floors * 0.14), 2, 6);
+    const crownStart = massing.floors - crownF;
+    addBlock(massing, { x: 0, z: 0, w: w * 0.62, l: l * 0.62, floors: crownF, floorStart: crownStart, yBase: crownStart * massing.floorHeight, label: "塔冠收分", isSetback: true, roof: massing.rng() > 0.5 ? "pitched" : "terrace" });
+  }
+  massing.notes.push(hasWaist ? "塔楼中段收腰设计，强化立面节奏感。" : "塔楼基座错位布置，优化街道界面与入口广场关系。");
+}
+
+function createBars(massing, buildableW, buildableL) {
+  const barCount = massing.footprint > buildableW * massing.rules.maxDepth * 1.4 ? clamp(2 + Math.floor(massing.rng() * 2), 2, 4) : (massing.footprint > buildableW * massing.rules.maxDepth * 0.7 ? 2 : 1);
+  const depth = clamp(massing.rules.minDepth + massing.rng() * (massing.rules.maxDepth - massing.rules.minDepth) * 0.6, massing.rules.minDepth, buildableL / (barCount * 1.5));
+  const totalLen = massing.footprint / depth;
+  const spacings = [];
+  let remaining = totalLen;
+  for (let i = 0; i < barCount - 1; i++) {
+    const len = totalLen * (0.3 + massing.rng() * 0.4) / barCount;
+    spacings.push(len);
+    remaining -= len;
+  }
+  spacings.push(Math.max(8, remaining));
+  const gap = Math.min(depth * 2.2, buildableL / (barCount + 1));
+  for (let i = 0; i < barCount; i += 1) {
+    const z = (i - (barCount - 1) / 2) * gap;
+    const offsetX = (massing.rng() - 0.5) * spacings[i] * 0.15;
+    addBlock(massing, { x: offsetX, z, w: spacings[i], l: depth, floors: i === 0 ? massing.floors : Math.max(2, Math.round(massing.floors * (0.72 + massing.rng() * 0.28))), label: barCount > 1 ? ("板楼" + (i + 1)) : "板式主体" });
+  }
+  massing.notes.push("板式布局错动排列，保证各栋采光通风与景观视野。");
+}
+
+function createPodium(massing, buildableW, buildableL) {
+  const w = clamp(Math.sqrt(massing.footprint * (1.15 + massing.rng() * 0.25)), buildableW * 0.40, buildableW * 0.85);
+  const l = clamp(massing.footprint / w, buildableL * 0.30, buildableL * 0.78);
+  const lowerFloors = clamp(Math.round(massing.floors * (0.55 + massing.rng() * 0.25)), 1, Math.max(1, massing.floors - 1));
+  addBlock(massing, { x: 0, z: 0, w, l, floors: lowerFloors, label: "连续基座", roof: "terrace" });
+  if (massing.floors > 2 && massing.floors - lowerFloors > 0) {
+    const upperFloors = massing.floors - lowerFloors;
+    const upperCount = clamp(Math.round(1 + massing.rng() * 2), 1, 3);
+    for (let i = 0; i < upperCount; i++) {
+      const uw = w * (0.38 + massing.rng() * 0.32);
+      const ul = l * (0.35 + massing.rng() * 0.30);
+      const ux = (i - (upperCount - 1) / 2) * w * (0.15 + massing.rng() * 0.15);
+      const uz = massing.rng() > 0.5 ? l * 0.1 : -l * 0.08;
+      addBlock(massing, {
+        x: ux, z: uz, w: uw, l: ul,
+        floors: Math.max(1, Math.round(upperFloors * (0.6 + massing.rng() * 0.35))),
+        floorStart: lowerFloors, yBase: lowerFloors * massing.floorHeight,
+        label: "退台块" + (i + 1), isSetback: true, roof: "terrace",
+      });
+    }
+  }
+  massing.notes.push("多层裙房叠加退台盒子，屋顶可作露台花园与活动空间。");
+}
+
+function createAtrium(massing, buildableW, buildableL) {
+  const outerW = clamp(Math.sqrt(massing.footprint * (1.3 + massing.rng() * 0.25)), buildableW * 0.42, buildableW * 0.82);
+  const outerL = clamp(massing.footprint * (1.3 + massing.rng() * 0.25) / outerW, buildableL * 0.38, buildableL * 0.82);
+  const ring = clamp(Math.min(outerW, outerL) * (0.18 + massing.rng() * 0.1), massing.rules.minDepth * 0.5, massing.rules.maxDepth * 0.9);
+  const southF = massing.floors;
+  const northF = Math.max(1, Math.round(massing.floors * (0.58 + massing.rng() * 0.32)));
+  const westF = Math.max(1, Math.round(massing.floors * (0.62 + massing.rng() * 0.3)));
+  const eastF = Math.max(1, Math.round(massing.floors * (0.48 + massing.rng() * 0.4)));
+  addBlock(massing, { x: 0, z: -outerL / 2 + ring / 2, w: outerW, l: ring, floors: southF, label: "南翼主体" });
+  addBlock(massing, { x: 0, z: outerL / 2 - ring / 2, w: outerW * (0.7 + massing.rng() * 0.28), l: ring, floors: northF, label: "北翼", roof: massing.rng() > 0.4 ? "green" : "terrace" });
+  addBlock(massing, { x: -outerW / 2 + ring / 2, z: 0, w: ring, l: outerL - ring * 2.2, floors: westF, label: "西翼" });
+  addBlock(massing, { x: outerW / 2 - ring / 2, z: 0, w: ring, l: outerL - ring * 2.2, floors: eastF, label: "东翼", roof: "terrace" });
+  massing.openSpaces.push({ x: 0, z: 0, w: outerW - ring * 2.3, l: outerL - ring * 2.3, label: "中庭" });
+  massing.notes.push("围合中庭各翼高度错落，引入光影变化与自然通风。");
+}
+
+function createCourtyard(massing, buildableW, buildableL) {
+  const outerW = clamp(Math.sqrt(massing.footprint * (1.35 + massing.rng() * 0.3)), buildableW * 0.40, buildableW * 0.82);
+  const outerL = clamp(massing.footprint * (1.35 + massing.rng() * 0.3) / outerW, buildableL * 0.36, buildableL * 0.78);
+  const depth = clamp(Math.min(outerW, outerL) * (0.16 + massing.rng() * 0.08), massing.rules.minDepth * 0.7, massing.rules.maxDepth * 0.9);
+  const southF = massing.floors;
+  const northF = Math.max(1, Math.round(massing.floors * (0.55 + massing.rng() * 0.35)));
+  const westF = Math.max(1, Math.round(massing.floors * (0.52 + massing.rng() * 0.35)));
+  const eastF = Math.max(1, Math.round(massing.floors * (0.48 + massing.rng() * 0.35)));
+  addBlock(massing, { x: 0, z: -outerL / 2 + depth / 2, w: outerW, l: depth, floors: southF, label: "南侧" });
+  addBlock(massing, { x: 0, z: outerL / 2 - depth / 2, w: outerW * (0.56 + massing.rng() * 0.3), l: depth, floors: northF, label: "北侧", isSetback: true });
+  addBlock(massing, { x: -outerW / 2 + depth / 2, z: 0, w: depth, l: outerL - depth * 2.2, floors: westF, label: "西侧" });
+  addBlock(massing, { x: outerW / 2 - depth / 2, z: 0, w: depth, l: outerL - depth * 2.2, floors: eastF, label: "东侧" });
+  massing.openSpaces.push({ x: 0, z: 0, w: outerW - depth * 2.5, l: outerL - depth * 2.5, label: "内院" });
+  massing.notes.push("四面围合内向院落，局部退台让阳光深入内院底层。");
+}
+
+function createCluster(massing, buildableW, buildableL) {
+  const count = clamp(Math.round(massing.footprint / 800), 3, 7);
+  const blockArea = massing.footprint / count;
+  for (let i = 0; i < count; i += 1) {
+    const angle = (Math.PI * 2 * i) / count + massing.rng() * 0.3;
+    const radius = Math.min(buildableW, buildableL) * (0.2 + massing.rng() * 0.2);
+    const w = clamp(Math.sqrt(blockArea) * (0.75 + massing.rng() * 0.4), massing.rules.minDepth * 0.7, buildableW * 0.35);
+    const l = clamp(blockArea / w, massing.rules.minDepth * 0.7, buildableL * 0.35);
+    const floorScale = 0.5 + massing.rng() * 0.6;
+    const floors = Math.max(1, Math.round(massing.floors * floorScale));
+    addBlock(massing, {
+      x: Math.cos(angle) * radius,
+      z: Math.sin(angle) * radius,
+      w, l, floors,
+      label: "组团" + (i + 1),
+      roof: i === 0 ? massing.roofType : (["terrace","green","flat"][Math.floor(massing.rng()*3)]),
+    });
+  }
+  massing.openSpaces.push({ x: 0, z: 0, w: buildableW * 0.22, l: buildableL * 0.18, label: "组团庭院" });
+  massing.notes.push("自由组团散布，体量间形成丰富半室外空间，适合分期开发。");
+}
+
+function createPodiumTower(massing, buildableW, buildableL) {
+  const podiumFloors = clamp(Math.round(massing.floors * (0.1 + massing.rng() * 0.14)), 1, 7);
+  const podiumW = clamp(Math.sqrt(massing.footprint * (1.2 + massing.rng() * 0.35)), buildableW * 0.40, buildableW * 0.82);
+  const podiumL = clamp(massing.footprint / podiumW, buildableL * 0.26, buildableL * 0.66);
+  addBlock(massing, { x: 0, z: 0, w: podiumW, l: podiumL, floors: podiumFloors, label: "裙房基座", roof: "terrace" });
+  const towerW = clamp(massing.rules.minDepth * (0.8 + massing.rng() * 0.3), massing.rules.minDepth * 0.75, buildableW * 0.38);
+  const towerL = clamp(massing.rules.minDepth * (0.8 + massing.rng() * 0.3), massing.rules.minDepth * 0.75, buildableL * 0.38);
+  const tx = (massing.rng() - 0.5) * podiumW * 0.4;
+  const tz = (massing.rng() - 0.5) * podiumL * 0.3;
+  addBlock(massing, { x: tx, z: tz, w: towerW, l: towerL, floors: massing.floors - podiumFloors, floorStart: podiumFloors, yBase: podiumFloors * massing.floorHeight, label: "塔楼" });
+  if (massing.floors > 18 && massing.rng() > 0.4) {
+    const crownF = Math.max(1, Math.round((massing.floors - podiumFloors) * 0.1));
+    const crownStart = massing.floors - crownF;
+    addBlock(massing, { x: tx, z: tz, w: towerW * 0.55, l: towerL * 0.55, floors: crownF, floorStart: crownStart, yBase: crownStart * massing.floorHeight, label: "塔冠", isSetback: true, roof: "pitched" });
+  }
+  massing.notes.push("裙房+塔楼经典组合，裙房面向街道，塔楼争取景观视野。");
+}
+
+function createInterlock(massing, buildableW, buildableL) {
+  const floorsA = Math.max(2, Math.round(massing.floors * (0.55 + massing.rng() * 0.3)));
+  const floorsB = Math.max(2, Math.round(massing.floors * (0.4 + massing.rng() * 0.35)));
+  const barDepth = clamp(massing.rules.minDepth * (0.9 + massing.rng() * 0.3), 10, buildableL * 0.38);
+  const long = clamp(Math.sqrt(massing.footprint) * (1.2 + massing.rng() * 0.5), buildableW * 0.38, buildableW * 0.82);
+  const offsetX = (massing.rng() - 0.5) * long * 0.25;
+  const offsetZ = (massing.rng() - 0.5) * barDepth * 0.5;
+  addBlock(massing, { x: offsetX, z: 0, w: long, l: barDepth, floors: floorsA, label: "横向体量" });
+  const bStart = Math.max(1, Math.round(floorsA * (0.08 + massing.rng() * 0.25)));
+  addBlock(massing, { x: -offsetX, z: offsetZ, w: barDepth * (0.9 + massing.rng() * 0.4), l: clamp(long * (0.7 + massing.rng() * 0.3), 12, buildableL * 0.78), floors: floorsB, yBase: bStart * massing.floorHeight, floorStart: bStart, label: "纵向体量", roof: massing.rng() > 0.5 ? "green" : "terrace" });
+  if (massing.rng() > 0.55) {
+    addBlock(massing, { x: offsetX + long * 0.22, z: offsetZ - barDepth * 0.7, w: long * 0.35, l: barDepth * 0.55, floors: Math.max(1, Math.round(massing.floors * 0.18)), label: "入口盒子", roof: "terrace" });
+  }
+  massing.openSpaces.push({ x: offsetX - long * 0.2, z: offsetZ + barDepth * 0.7, w: long * 0.25, l: barDepth * 0.7, label: "穿插灰空间" });
+  massing.notes.push("横纵体量互相穿插咬合，产生架空入口与多层级半室外空间。");
+}
+
+function createCantilever(massing, buildableW, buildableL) {
+  const baseFloors = clamp(Math.round(massing.floors * (0.35 + massing.rng() * 0.2)), 2, Math.max(2, massing.floors - 2));
+  const baseW = clamp(Math.sqrt(massing.footprint) * (0.95 + massing.rng() * 0.2), buildableW * 0.36, buildableW * 0.72);
+  const baseL = clamp(baseW * (0.5 + massing.rng() * 0.15), massing.rules.minDepth, buildableL * 0.48);
+  addBlock(massing, { x: 0, z: 0, w: baseW, l: baseL, floors: baseFloors, label: "承托基座", roof: "terrace" });
+  const topFloors = Math.max(1, massing.floors - baseFloors);
+  const overhang = 0.12 + massing.rng() * 0.13;
+  const cantDir = massing.rng() > 0.5 ? 1 : -1;
+  addBlock(massing, {
+    x: cantDir * baseW * overhang,
+    z: massing.rng() > 0.5 ? baseL * 0.04 : -baseL * 0.04,
+    w: baseW * (0.82 + massing.rng() * 0.16),
+    l: baseL * (0.78 + massing.rng() * 0.16),
+    floors: topFloors,
+    yBase: baseFloors * massing.floorHeight,
+    floorStart: baseFloors,
+    label: "悬挑上部",
+  });
+  massing.openSpaces.push({ x: -cantDir * baseW * 0.35, z: baseL * 0.48, w: baseW * 0.2, l: baseL * 0.5, label: "架空前场" });
+  massing.notes.push("上部体量小比例悬挑，主要落在基座承托范围，局部架空形成入口。");
+}
+
+function createStepped(massing, buildableW, buildableL) {
+  const tiers = clamp(Math.round(massing.floors / 2.2), 3, 9);
+  const tierFloors = Math.max(1, Math.round(massing.floors / tiers));
+  const baseW = clamp(Math.sqrt(massing.footprint * (1.05 + massing.rng() * 0.2)), buildableW * 0.40, buildableW * 0.84);
+  const baseL = clamp(massing.footprint / baseW, buildableL * 0.30, buildableL * 0.74);
+  const stepFrac = 0.04 + massing.rng() * 0.05;
+  for (let i = 0; i < tiers; i += 1) {
+    const scale = 1 - i * stepFrac;
+    const floors = i === tiers - 1 ? Math.max(1, massing.floors - tierFloors * (tiers - 1)) : tierFloors;
+    addBlock(massing, {
+      x: 0,
+      z: 0,
+      w: Math.max(6, baseW * scale),
+      l: Math.max(6, baseL * scale),
+      floors,
+      yBase: i * tierFloors * massing.floorHeight,
+      floorStart: i * tierFloors,
+      label: "退台" + (i + 1),
+      roof: i === tiers - 1 ? massing.roofType : "terrace",
+      isSetback: i > 0,
+    });
+  }
+  massing.notes.push(tiers + "级退台逐层收分，每级屋顶均可作为露台花园使用。");
+}
+
+function createBridge(massing, buildableW, buildableL) {
+  const towerFloors = Math.max(3, massing.floors);
+  const towerArea = massing.footprint * (0.3 + massing.rng() * 0.15);
+  const side = clamp(Math.sqrt(towerArea), massing.rules.minDepth * 0.8, buildableW * 0.3);
+  const gap = clamp(side * (1.2 + massing.rng() * 0.8), buildableW * 0.18, buildableW * 0.42);
+  const zGap = massing.rng() > 0.5 ? side * 0.35 : -side * 0.2;
+  addBlock(massing, { x: -gap / 2, z: -zGap / 2, w: side, l: side * (0.9 + massing.rng() * 0.3), floors: towerFloors, label: "塔体A" });
+  addBlock(massing, { x: gap / 2, z: zGap / 2, w: side, l: side * (0.9 + massing.rng() * 0.3), floors: Math.max(2, Math.round(towerFloors * (0.7 + massing.rng() * 0.25))), label: "塔体B", roof: massing.rng() > 0.5 ? "green" : "terrace" });
+  const bridgeFloors = clamp(Math.round(massing.floors * 0.12), 1, 3);
+  const bridgeStart = clamp(Math.round(massing.floors * (0.35 + massing.rng() * 0.25)), 2, Math.max(2, massing.floors - bridgeFloors));
+  addBlock(massing, {
+    x: 0, z: 0,
+    w: gap + side * 0.55,
+    l: side * 0.35,
+    floors: bridgeFloors,
+    yBase: bridgeStart * massing.floorHeight,
+    floorStart: bridgeStart,
+    label: "空中连桥",
+    roof: "flat",
+  });
+  massing.openSpaces.push({ x: 0, z: side * 0.85, w: gap * 0.58, l: side * 0.45, label: "塔间广场" });
+  massing.notes.push("双塔通过空中连桥连接，地面保持通透形成入口广场。");
+}
+
+function createFreeMix(massing, buildableW, buildableL) {
+  const operations = [
+    addCrossInsert,
+    addHighInsert,
+    addLowMat,
+    addCantileverPiece,
+    addSetbackStack,
+    addTowerPiece,
+    addBridgePiece,
+    addVoidPiece,
+  ];
+  const count = randomInt(massing.rng, 5, 9);
+  for (let i = 0; i < count; i += 1) {
+    pick(massing.rng, operations)(massing, buildableW, buildableL, i);
+  }
+  massing.notes.push("自由组合多种体量操作，每次生成都会重新混合穿插、悬挑、退台与连桥。");
+}
+
+function createMultiInterlock(massing, buildableW, buildableL) {
+  const layers = randomInt(massing.rng, 4, 7);
+  const baseLength = randomBetween(massing.rng, buildableW * 0.42, buildableW * 0.86);
+  const baseDepth = clamp(randomBetween(massing.rng, massing.rules.minDepth * 0.9, massing.rules.maxDepth * 1.25), 10, buildableL * 0.34);
+  for (let i = 0; i < layers; i += 1) {
+    const horizontal = i % 2 === 0;
+    const floorStart = i === 0 ? 0 : randomInt(massing.rng, 0, Math.max(1, Math.floor(massing.floors * 0.62)));
+    const floors = randomInt(massing.rng, 1, Math.max(2, Math.ceil(massing.floors * randomBetween(massing.rng, 0.22, 0.72))));
+    addBlock(massing, {
+      x: randomBetween(massing.rng, -buildableW * 0.18, buildableW * 0.18),
+      z: randomBetween(massing.rng, -buildableL * 0.18, buildableL * 0.18),
+      w: horizontal ? baseLength * randomBetween(massing.rng, 0.62, 1.05) : baseDepth * randomBetween(massing.rng, 0.8, 1.35),
+      l: horizontal ? baseDepth * randomBetween(massing.rng, 0.8, 1.35) : Math.min(buildableL * 0.82, baseLength * randomBetween(massing.rng, 0.58, 0.98)),
+      floors,
+      yBase: floorStart * massing.floorHeight,
+      floorStart,
+      label: horizontal ? `横向穿插 ${i + 1}` : `纵向穿插 ${i + 1}`,
+      roof: pick(massing.rng, [massing.roofType, "green", "terrace", "flat"]),
+      isSetback: floorStart > 0,
+    });
+  }
+  massing.openSpaces.push({ x: 0, z: buildableL * 0.18, w: buildableW * 0.22, l: buildableL * 0.14, label: "穿插缝隙" });
+  massing.notes.push("多层级穿插体量在不同高度交错，形成架空、咬合和屋顶平台。");
+}
+
+function createPorousMat(massing, buildableW, buildableL) {
+  const rows = randomInt(massing.rng, 2, 3);
+  const cols = randomInt(massing.rng, 3, 5);
+  const cellW = buildableW / (cols + 0.8);
+  const cellL = buildableL / (rows + 1.2);
+  for (let row = 0; row < rows; row += 1) {
+    for (let col = 0; col < cols; col += 1) {
+      if (massing.rng() < 0.22) {
+        massing.openSpaces.push({
+          x: (col - (cols - 1) / 2) * cellW,
+          z: (row - (rows - 1) / 2) * cellL,
+          w: cellW * 0.58,
+          l: cellL * 0.58,
+          label: "庭院孔洞",
+        });
+        continue;
+      }
+      const floors = randomInt(massing.rng, 1, Math.max(2, Math.min(massing.floors, 8)));
+      addBlock(massing, {
+        x: (col - (cols - 1) / 2) * cellW + randomBetween(massing.rng, -cellW * 0.09, cellW * 0.09),
+        z: (row - (rows - 1) / 2) * cellL + randomBetween(massing.rng, -cellL * 0.09, cellL * 0.09),
+        w: cellW * randomBetween(massing.rng, 0.56, 0.9),
+        l: cellL * randomBetween(massing.rng, 0.48, 0.86),
+        floors,
+        label: `多孔基底 ${row + 1}-${col + 1}`,
+        roof: pick(massing.rng, ["flat", "green", "terrace", massing.roofType]),
+      });
+    }
+  }
+  addBridgePiece(massing, buildableW, buildableL, 99);
+  massing.notes.push("多孔基底由可变网格组成，局部挖空形成庭院、巷道和屋顶连接。");
+}
+
+function createCantileverChain(massing, buildableW, buildableL) {
+  const count = randomInt(massing.rng, 4, 7);
+  const baseW = randomBetween(massing.rng, buildableW * 0.28, buildableW * 0.48);
+  const baseL = randomBetween(massing.rng, buildableL * 0.13, buildableL * 0.24);
+  for (let i = 0; i < count; i += 1) {
+    const floorStart = i === 0 ? 0 : randomInt(massing.rng, 1, Math.max(1, Math.floor(massing.floors * 0.65)));
+    addBlock(massing, {
+      x: (i - (count - 1) / 2) * baseW * 0.38 + randomBetween(massing.rng, -baseW * 0.12, baseW * 0.12),
+      z: (i % 2 ? 1 : -1) * baseL * randomBetween(massing.rng, 0.18, 0.72),
+      w: baseW * randomBetween(massing.rng, 0.72, 1.22),
+      l: baseL * randomBetween(massing.rng, 0.72, 1.15),
+      floors: randomInt(massing.rng, 1, Math.max(2, Math.ceil(massing.floors * 0.42))),
+      yBase: floorStart * massing.floorHeight,
+      floorStart,
+      label: `连续悬挑 ${i + 1}`,
+      roof: pick(massing.rng, ["flat", "terrace", massing.roofType]),
+      isSetback: floorStart > 0,
+    });
+  }
+  massing.openSpaces.push({ x: 0, z: buildableL * 0.2, w: buildableW * 0.34, l: buildableL * 0.12, label: "架空廊下" });
+  massing.notes.push("多个悬挑盒子链式叠加，形成连续雨棚、架空廊和错层露台。");
+}
+
+function createPinwheel(massing, buildableW, buildableL) {
+  const arms = randomInt(massing.rng, 4, 6);
+  const length = randomBetween(massing.rng, Math.min(buildableW, buildableL) * 0.34, Math.min(buildableW, buildableL) * 0.62);
+  const depth = clamp(randomBetween(massing.rng, massing.rules.minDepth, massing.rules.maxDepth), 9, Math.min(buildableW, buildableL) * 0.22);
+  for (let i = 0; i < arms; i += 1) {
+    const angle = (Math.PI * 2 * i) / arms;
+    const horizontal = Math.abs(Math.cos(angle)) > Math.abs(Math.sin(angle));
+    addBlock(massing, {
+      x: Math.cos(angle) * length * 0.22,
+      z: Math.sin(angle) * length * 0.22,
+      w: horizontal ? length : depth,
+      l: horizontal ? depth : length,
+      floors: randomInt(massing.rng, Math.max(1, Math.floor(massing.floors * 0.22)), Math.max(2, massing.floors)),
+      yBase: 0,
+      floorStart: 0,
+      label: `风车型穿插 ${i + 1}`,
+      roof: pick(massing.rng, ["flat", "green", "terrace", massing.roofType]),
+      isSetback: i > 1,
+    });
+  }
+  massing.openSpaces.push({ x: 0, z: 0, w: depth * 1.45, l: depth * 1.45, label: "中心空腔" });
+  massing.notes.push("风车型穿插从中心向外展开，体量方向变化丰富。");
+}
+
+function createTerraceVillage(massing, buildableW, buildableL) {
+  const count = randomInt(massing.rng, 6, 11);
+  for (let i = 0; i < count; i += 1) {
+    const row = Math.floor(i / 3);
+    const col = i % 3;
+    const floors = randomInt(massing.rng, 1, Math.max(2, Math.min(massing.floors, 7)));
+    addBlock(massing, {
+      x: (col - 1) * buildableW * randomBetween(massing.rng, 0.16, 0.24) + randomBetween(massing.rng, -6, 6),
+      z: (row - 1) * buildableL * randomBetween(massing.rng, 0.12, 0.22) + randomBetween(massing.rng, -6, 6),
+      w: randomBetween(massing.rng, buildableW * 0.12, buildableW * 0.28),
+      l: randomBetween(massing.rng, buildableL * 0.08, buildableL * 0.2),
+      floors,
+      yBase: randomInt(massing.rng, 0, 1) * massing.floorHeight,
+      label: `台地单元 ${i + 1}`,
+      roof: pick(massing.rng, ["terrace", "green", "pitched", massing.roofType]),
+      isSetback: true,
+    });
+  }
+  massing.notes.push("台地式小体量自由聚合，形成村落感的多层屋顶平台。");
+}function createLShape(massing, buildableW, buildableL) {
+  const wingDepth = clamp(massing.rules.minDepth + massing.rng() * 4, massing.rules.minDepth, buildableW * 0.42);
+  const longLen = clamp(massing.footprint / wingDepth * 0.58, buildableW * 0.32, buildableW * 0.84);
+  const shortFrac = 0.42 + massing.rng() * 0.32;
+  const longWing = { w: longLen, l: wingDepth, floors: massing.floors, label: "长翼主体" };
+  const shortWing = { w: wingDepth, l: longLen * shortFrac, floors: Math.max(2, Math.round(massing.floors * (0.7 + massing.rng() * 0.25))), label: "短翼转角" };
+  addBlock(massing, { x: -longWing.w / 2 + wingDepth / 2, z: 0, w: longWing.w, l: longWing.l, floors: longWing.floors, label: longWing.label });
+  addBlock(massing, { x: longWing.w / 2 - wingDepth / 2, z: -shortWing.l / 2 + wingDepth / 2, w: shortWing.w, l: shortWing.l, floors: shortWing.floors, label: shortWing.label });
+  if (massing.floors > 8 && massing.rng() > 0.55) {
+    addBlock(massing, { x: longWing.w / 2 - wingDepth / 2, z: -shortWing.l / 2 + wingDepth / 2, w: wingDepth * 0.65, l: wingDepth * 0.65, floors: Math.max(2, Math.round(massing.floors * 0.35)), floorStart: shortWing.floors, yBase: shortWing.floors * massing.floorHeight, label: "转角塔楼", isSetback: true });
+  }
+  massing.notes.push("L形转角布局形成半围合广场，转角处可设主入口。");
+}
+
+function createUShape(massing, buildableW, buildableL) {
+  const wingDepth = clamp(massing.rules.minDepth + massing.rng() * 6, massing.rules.minDepth, buildableW * 0.38);
+  const backLen = clamp(massing.footprint / wingDepth * 0.40, buildableW * 0.30, buildableW * 0.78);
+  const armLenFrac = 0.42 + massing.rng() * 0.28;
+  const armLen = backLen * armLenFrac;
+  const armFloors = Math.max(1, Math.round(massing.floors * (0.6 + massing.rng() * 0.35)));
+  addBlock(massing, { x: 0, z: -armLen / 2 + wingDepth / 2, w: backLen, l: wingDepth, floors: massing.floors, label: "U形背板" });
+  addBlock(massing, { x: -backLen / 2 + wingDepth / 2, z: armLen / 2, w: wingDepth, l: armLen, floors: armFloors, label: "U形左翼" });
+  addBlock(massing, { x: backLen / 2 - wingDepth / 2, z: armLen / 2, w: wingDepth, l: armLen, floors: Math.max(1, Math.round(armFloors * (0.88 + massing.rng() * 0.12))), label: "U形右翼" });
+  massing.openSpaces.push({ x: 0, z: armLen * 0.42, w: backLen - wingDepth * 2.2, l: armLen - wingDepth * 1.5, label: "U形内院" });
+  massing.notes.push("U形围合创造内向庭院，三面采光通风良好。");
+}
+
+function createTwinTower(massing, buildableW, buildableL) {
+  const coreArea = massing.footprint * 0.44;
+  const side = Math.sqrt(coreArea);
+  const w = clamp(side * (0.78 + massing.rng() * 0.28), massing.rules.minDepth, buildableW * 0.36);
+  const l = clamp(coreArea / w, massing.rules.minDepth, buildableL * 0.36);
+  const sep = clamp(l * (0.25 + massing.rng() * 0.45), 10, buildableL * 0.32);
+  const baseFloors = clamp(Math.round(massing.floors * 0.1), 1, 5);
+  addBlock(massing, { x: 0, z: 0, w: buildableW * 0.68, l: l * 1.6 + sep, floors: baseFloors, label: "双塔基座", roof: "terrace" });
+  addBlock(massing, { x: 0, z: -sep / 2, w, l, floors: massing.floors, label: "塔楼A" });
+  addBlock(massing, { x: 0, z: sep / 2, w, l, floors: Math.max(2, Math.round(massing.floors * (0.78 + massing.rng() * 0.22))), label: "塔楼B" });
+  if (massing.rng() > 0.45) {
+    const bridgeF = clamp(Math.round(massing.floors * 0.58), 3, massing.floors - 4);
+    addBlock(massing, { x: 0, z: 0, w: w * 0.42, l: sep * 0.82, floors: 2, floorStart: bridgeF, yBase: bridgeF * massing.floorHeight, label: "空中连廊", isSetback: true });
+  }
+  massing.notes.push("双塔并置形成标志性天际线，可通过连廊连接。");
+}
+
+function createPointBlock(massing, buildableW, buildableL) {
+  const side = clamp(Math.sqrt(massing.footprint * 0.78), massing.rules.minDepth * 0.9, Math.min(buildableW, buildableL) * 0.48);
+  addBlock(massing, { x: 0, z: 0, w: side, l: side, floors: massing.floors, label: "点式主体" });
+  if (massing.floors > 9 && massing.rng() > 0.5) {
+    const topW = side * (0.55 + massing.rng() * 0.25);
+    const topF = clamp(Math.round(massing.floors * 0.25), 2, 8);
+    const topStart = massing.floors - topF;
+    addBlock(massing, { x: massing.rng() > 0.5 ? side * 0.16 : -side * 0.12, z: massing.rng() > 0.5 ? side * 0.1 : -side * 0.14, w: topW, l: topW * (0.9 + massing.rng() * 0.2), floors: topF, floorStart: topStart, yBase: topStart * massing.floorHeight, label: "顶部收分", isSetback: true });
+  }
+  massing.notes.push("点式独栋适合高密度区域，四向采光均好。");
+}
+
+function createCascade(massing, buildableW, buildableL) {
+  const levels = clamp(Math.round(massing.floors / 3), 2, 5);
+  const baseW = clamp(Math.sqrt(massing.footprint * 1.5), buildableW * 0.38, buildableW * 0.82);
+  const baseL = clamp(massing.footprint * 1.5 / baseW, buildableL * 0.30, buildableL * 0.72);
+  const stepW = baseW * 0.16;
+  const stepL = baseL * 0.14;
+  const floorsPerLevel = Math.max(1, Math.floor(massing.floors / levels));
+  for (let i = 0; i < levels; i++) {
+    const w = baseW - i * stepW * 2;
+    const l = baseL - i * stepL * 2;
+    const floorStart = i * floorsPerLevel;
+    const levelFloors = i === levels - 1 ? massing.floors - floorStart : floorsPerLevel;
+    addBlock(massing, {
+      x: 0, z: 0, w: Math.max(8, w), l: Math.max(8, l),
+      floors: levelFloors, floorStart, yBase: floorStart * massing.floorHeight,
+      label: i === 0 ? "跌落基座" : "跌落" + (i + 1),
+      isSetback: i > 0,
+    });
+  }
+  massing.notes.push("跌落式退台顺应地形，每层均可获得屋顶露台。");
+}
+
+function createZiggurat(massing, buildableW, buildableL) {
+  const steps = clamp(Math.round(massing.floors / 2.5), 2, 5);
+  const baseW = clamp(Math.sqrt(massing.footprint * 1.6), buildableW * 0.40, buildableW * 0.80);
+  const baseL = clamp(massing.footprint * 1.6 / baseW, buildableL * 0.32, buildableL * 0.70);
+  const floorsPerStep = Math.max(1, Math.floor(massing.floors / steps));
+  for (let i = 0; i < steps; i++) {
+    const frac = 1 - i * (0.12 + massing.rng() * 0.06);
+    const w = baseW * frac;
+    const l = baseL * frac;
+    const offsetX = 0;
+    const offsetZ = 0;
+    const floorStart = i * floorsPerStep;
+    const stepFloors = i === steps - 1 ? massing.floors - floorStart : floorsPerStep;
+    addBlock(massing, {
+      x: offsetX, z: offsetZ, w: Math.max(8, w), l: Math.max(8, l),
+      floors: stepFloors, floorStart, yBase: floorStart * massing.floorHeight,
+      label: i === 0 ? "阶梯底层" : "阶梯第" + (i + 1),
+      isSetback: i > 0, roof: i === steps - 1 ? (massing.rng() > 0.4 ? "green" : "terrace") : "terrace",
+    });
+  }
+  massing.notes.push("阶梯金字塔形体稳重，适合文化建筑和商业综合体。");
+}
+
+function createHybrid(massing, buildableW, buildableL) {
+  const podiumFloors = clamp(Math.round(massing.floors * 0.38), 1, Math.min(6, massing.floors - 2));
+  const podiumW = clamp(Math.sqrt(massing.footprint * 1.15), buildableW * 0.42, buildableW * 0.80);
+  const podiumL = clamp(massing.footprint * 1.15 / podiumW, buildableL * 0.34, buildableL * 0.76);
+  addBlock(massing, { x: 0, z: 0, w: podiumW, l: podiumL, floors: podiumFloors, label: "混合基座", roof: "terrace" });
+  const towerCount = podiumFloors < massing.floors ? clamp(Math.round(2 + massing.rng() * 2), 2, 4) : 0;
+  const towerFloors = massing.floors - podiumFloors;
+  for (let i = 0; i < towerCount; i++) {
+    const angle = (Math.PI * 2 * i) / towerCount + massing.rng() * 0.4;
+    const radius = Math.min(podiumW, podiumL) * (0.28 + massing.rng() * 0.18);
+    const tw = clamp(massing.rules.minDepth * (0.8 + massing.rng() * 0.25), 8, podiumW * 0.38);
+    const tl = clamp(massing.rules.minDepth * (0.8 + massing.rng() * 0.25), 8, podiumL * 0.38);
+    addBlock(massing, {
+      x: Math.cos(angle) * radius, z: Math.sin(angle) * radius,
+      w: tw, l: tl,
+      floors: Math.max(2, Math.round(towerFloors * (0.65 + massing.rng() * 0.3))),
+      floorStart: podiumFloors, yBase: podiumFloors * massing.floorHeight,
+      label: "叠合塔楼" + (i + 1),
+    });
+  }
+  massing.notes.push("混合叠合适应复合功能需求，裙房屋顶可作共享平台。");
+}
+
+function createPerimeterBlock(massing, buildableW, buildableL) {
+  const ringDepth = clamp(massing.rules.minDepth * 0.75, 8, Math.min(buildableW, buildableL) * 0.28);
+  const outerW = clamp(Math.sqrt(massing.footprint * 1.5), buildableW * 0.42, buildableW * 0.80);
+  const outerL = clamp(massing.footprint * 1.5 / outerW, buildableL * 0.36, buildableL * 0.78);
+  const gapChance = massing.rng();
+  const southF = massing.floors;
+  const northF = Math.max(1, Math.round(massing.floors * (0.6 + massing.rng() * 0.3)));
+  const eastF = Math.max(1, Math.round(massing.floors * (0.52 + massing.rng() * 0.38)));
+  const westF = Math.max(1, Math.round(massing.floors * (0.48 + massing.rng() * 0.42)));
+  if (gapChance < 0.85) addBlock(massing, { x: 0, z: -outerL / 2 + ringDepth / 2, w: outerW, l: ringDepth, floors: southF, label: "南侧板楼" });
+  if (gapChance < 0.80) addBlock(massing, { x: 0, z: outerL / 2 - ringDepth / 2, w: outerW * (0.65 + massing.rng() * 0.3), l: ringDepth, floors: northF, label: "北侧板楼", isSetback: true });
+  if (gapChance < 0.88) addBlock(massing, { x: -outerW / 2 + ringDepth / 2, z: 0, w: ringDepth, l: outerL - ringDepth * 2, floors: westF, label: "西侧板楼" });
+  if (gapChance < 0.82) addBlock(massing, { x: outerW / 2 - ringDepth / 2, z: 0, w: ringDepth, l: outerL - ringDepth * 2, floors: eastF, label: "东侧板楼" });
+  massing.openSpaces.push({ x: 0, z: 0, w: outerW - ringDepth * 2.4, l: outerL - ringDepth * 2.4, label: "内院花园" });
+  massing.notes.push("周边式街区围合内向花园，隔绝城市噪声。");
+}
+
+
+
+
+function createRotatedCluster(massing, buildableW, buildableL) {
+  const count = randomInt(massing.rng, 3, 6);
+  const centerX = (massing.rng() - 0.5) * buildableW * 0.15;
+  const centerZ = (massing.rng() - 0.5) * buildableL * 0.15;
+  const baseRadius = Math.min(buildableW, buildableL) * (0.18 + massing.rng() * 0.15);
+  const heightBand = Math.max(1, Math.round(massing.floors * 0.35));
+  for (let i = 0; i < count; i++) {
+    const angle = (Math.PI * 2 * i) / count + massing.rng() * 0.35;
+    const radius = baseRadius * (0.72 + massing.rng() * 0.38);
+    const w = clamp(massing.rules.minDepth * (0.55 + massing.rng() * 0.55), 7, buildableW * 0.38);
+    const l = clamp(massing.rules.minDepth * (0.55 + massing.rng() * 0.55), 7, buildableL * 0.38);
+    const floors = Math.max(1, Math.round(massing.floors - heightBand * (massing.rng() > 0.55 ? i * 0.5 : (count - 1 - i) * 0.5)));
+    const rotation = massing.rng() * Math.PI * 0.4 - Math.PI * 0.2;
+    addBlock(massing, {
+      x: centerX + Math.cos(angle) * radius,
+      z: centerZ + Math.sin(angle) * radius,
+      w, l, floors,
+      rotation,
+      yBase: 0,
+      label: '\u65cb\u8f6c\u5757' + (i + 1),
+      roof: i === count - 1 ? massing.roofType : pick(massing.rng, ['terrace', 'green', 'flat']),
+    });
+  }
+  massing.openSpaces.push({ x: centerX, z: centerZ, w: baseRadius * 0.9, l: baseRadius * 0.9, label: '\u4e2d\u5fc3\u5e7f\u573a' });
+  massing.notes.push('\u4f53\u91cf\u56f4\u7ed5\u4e2d\u5fc3\u65cb\u8f6c\u5e03\u5c40\uff0c\u5f62\u6210\u52a8\u6001\u89c6\u89c9\u6548\u679c\u4e0e\u591a\u5411\u666f\u89c2\u3002');
+}
+
+function createSlicedStack(massing, buildableW, buildableL) {
+  const slices = clamp(randomInt(massing.rng, 3, 6), 3, 6);
+  const baseW = clamp(Math.sqrt(massing.footprint * 1.1), buildableW * 0.32, buildableW * 0.68);
+  const baseL = clamp(massing.footprint * 1.1 / baseW, buildableL * 0.28, buildableL * 0.64);
+  const floorsPerSlice = Math.max(1, Math.round(massing.floors / slices));
+  const shiftMax = baseW * 0.22;
+  for (let i = 0; i < slices; i++) {
+    const frac = 1 - i * (0.06 + massing.rng() * 0.06);
+    const rotation = (massing.rng() - 0.5) * 0.3 * i;
+    const shiftX = (i > 0 ? (massing.rng() - 0.5) * shiftMax * i * 0.5 : 0);
+    const shiftZ = (i > 0 ? (massing.rng() - 0.5) * shiftMax * i * 0.5 : 0);
+    const w = Math.max(7, baseW * frac);
+    const l = Math.max(7, baseL * frac);
+    const sliceFloors = i === slices - 1 ? Math.max(1, massing.floors - floorsPerSlice * (slices - 1)) : floorsPerSlice;
+    addBlock(massing, {
+      x: shiftX, z: shiftZ, w, l, floors: sliceFloors,
+      rotation,
+      yBase: i * floorsPerSlice * massing.floorHeight,
+      floorStart: i * floorsPerSlice,
+      label: '\u5207\u7247' + (i + 1),
+      roof: i === slices - 1 ? massing.roofType : 'terrace',
+      isSetback: i > 0,
+    });
+  }
+  massing.notes.push('\u5207\u7247\u5f0f\u5806\u53e0\uff0c\u6bcf\u5c42\u53ef\u72ec\u7acb\u65cb\u8f6c\u4e0e\u4f4d\u79fb\uff0c\u521b\u9020\u60ac\u6d6e\u611f\u4e0e\u9732\u53f0\u7a7a\u95f4\u3002');
+}
+
+function createFoldedPlate(massing, buildableW, buildableL) {
+  const folds = clamp(randomInt(massing.rng, 2, 4), 2, 4);
+  const spineLength = Math.min(buildableW, buildableL) * (0.55 + massing.rng() * 0.35);
+  const spineAngle = massing.rng() * Math.PI * 2;
+  const spineX = Math.cos(spineAngle);
+  const spineZ = Math.sin(spineAngle);
+  const totalFloors = massing.floors;
+  for (let i = 0; i < folds; i++) {
+    const t = i / Math.max(1, folds - 1);
+    const alongSpine = (t - 0.5) * spineLength;
+    const w = clamp(massing.rules.minDepth * (0.6 + massing.rng() * 0.5), 8, buildableW * 0.25);
+    const l = clamp(spineLength / folds * (0.7 + massing.rng() * 0.4), 10, buildableL * 0.40);
+    const foldAngle = spineAngle + (massing.rng() - 0.5) * Math.PI * 0.55;
+    const heightFrac = 0.65 + massing.rng() * 0.35;
+    const floors = Math.max(2, Math.round(totalFloors * heightFrac));
+    addBlock(massing, {
+      x: spineX * alongSpine + (massing.rng() - 0.5) * l * 0.4,
+      z: spineZ * alongSpine + (massing.rng() - 0.5) * l * 0.4,
+      w, l, floors,
+      rotation: foldAngle,
+      yBase: 0,
+      label: '\u6298\u677f' + (i + 1),
+      roof: pick(massing.rng, ['pitched', 'terrace', 'flat']),
+    });
+  }
+  massing.notes.push('\u6298\u677f\u5f62\u4f53\u6cbf\u4e2d\u8f74\u5c55\u5f00\uff0c\u9510\u89d2\u4ea4\u9519\u521b\u9020\u5f3a\u70c8\u7684\u96d5\u5851\u611f\u3002');
+}
+
+function createSplitTower(massing, buildableW, buildableL) {
+  const baseW = clamp(Math.sqrt(massing.footprint * 0.58), buildableW * 0.18, buildableW * 0.42);
+  const baseL = clamp(massing.footprint * 0.58 / baseW, buildableL * 0.16, buildableL * 0.38);
+  const wingW = baseW * (0.42 + massing.rng() * 0.18);
+  const wingL = baseL * (0.82 + massing.rng() * 0.18);
+  const gap = Math.max(4, Math.min(baseW, baseL) * (0.08 + massing.rng() * 0.12));
+  const splitDir = massing.rng() > 0.5 ? 'x' : 'z';
+  const podiumFloors = clamp(Math.round(massing.floors * 0.22), 2, Math.min(8, massing.floors - 3));
+  addBlock(massing, {
+    x: 0, z: 0,
+    w: baseW * 2.1, l: baseL * 2.1,
+    floors: podiumFloors,
+    label: '\u53cc\u5854\u57fa\u5ea7',
+    roof: 'terrace',
+  });
+  for (let i = 0; i < 2; i++) {
+    const offset = (i - 0.5) * (splitDir === 'x' ? (wingW + gap) : 0);
+    const offsetZ = (i - 0.5) * (splitDir === 'z' ? (wingW + gap) : 0);
+    const towerFloors = massing.floors - podiumFloors;
+    const heightFrac = 0.82 + massing.rng() * 0.18;
+    const w = wingW * (0.9 + massing.rng() * 0.2);
+    const l = wingL * (0.9 + massing.rng() * 0.2);
+    addBlock(massing, {
+      x: offset, z: offsetZ,
+      w, l,
+      floors: Math.max(3, Math.round(towerFloors * heightFrac)),
+      floorStart: podiumFloors,
+      yBase: podiumFloors * massing.floorHeight,
+      label: '\u53cc\u5854' + (['A', 'B'][i]),
+      roof: massing.roofType,
+    });
+  }
+  massing.openSpaces.push({
+    x: 0, z: 0,
+    w: gap * 3, l: splitDir === 'z' ? wingL * 0.8 : gap * 3,
+    label: '\u53cc\u5854\u95f4\u9699',
+  });
+  massing.notes.push('\u53cc\u5854\u4ece\u5171\u4eab\u57fa\u5ea7\u751f\u957f\uff0c\u4e2d\u95f4\u7f1d\u9699\u5f62\u6210\u5929\u9645\u7ebf\u5bf9\u8bdd\u3002');
+}
+
+﻿function createHorizontalMat(massing, buildableW, buildableL) {
+  // Wide, ground-hugging mat with subtle plateaus + one vertical accent
+  const matW = clamp(buildableW * (0.82 + massing.rng() * 0.16), buildableW * 0.55, buildableW * 0.92);
+  const matL = clamp(buildableL * (0.80 + massing.rng() * 0.18), buildableL * 0.52, buildableL * 0.90);
+  const plateauCount = randomInt(massing.rng, 2, 4);
+  const matFloors = Math.max(1, Math.round(massing.floors * (0.65 + massing.rng() * 0.28)));
+  const accentFloors = massing.floors - matFloors;
+  
+  // Create plateaus at slightly different heights
+  for (let i = 0; i < plateauCount; i++) {
+    const pw = matW * (0.35 + massing.rng() * 0.35);
+    const pl = matL * (0.35 + massing.rng() * 0.35);
+    const px = (massing.rng() - 0.5) * matW * 0.55;
+    const pz = (massing.rng() - 0.5) * matL * 0.55;
+    const pFloors = Math.max(1, Math.round(matFloors * (0.5 + massing.rng() * 0.45)));
+    const pHeight = i > 0 ? randomInt(massing.rng, 1, 2) * massing.floorHeight : 0;
+    addBlock(massing, {
+      x: px, z: pz, w: pw, l: pl,
+      floors: pFloors,
+      yBase: pHeight,
+      label: '\u5e73\u53f0' + (i + 1),
+      roof: i === plateauCount - 1 && accentFloors <= 1 ? massing.roofType : 'terrace',
+    });
+  }
+  
+  // Add base mat (the ground layer connecting everything)
+  addBlock(massing, {
+    x: 0, z: 0,
+    w: matW, l: matL,
+    floors: randomInt(massing.rng, 1, Math.max(1, Math.min(3, matFloors))),
+    label: '\u57fa\u5e95\u5c42',
+    roof: 'green',
+  });
+  
+  // Vertical accent (lantern/tower piece)
+  if (accentFloors >= 2) {
+    const accentW = clamp(matW * (0.08 + massing.rng() * 0.08), 7, matW * 0.18);
+    const accentL = clamp(matL * (0.08 + massing.rng() * 0.08), 7, matL * 0.18);
+    addBlock(massing, {
+      x: (massing.rng() - 0.5) * matW * 0.2,
+      z: (massing.rng() - 0.5) * matL * 0.2,
+      w: accentW, l: accentL,
+      floors: accentFloors,
+      floorStart: matFloors,
+      yBase: matFloors * massing.floorHeight,
+      label: '\u706f\u5854',
+      roof: massing.roofType,
+      isSetback: true,
+    });
+  }
+  
+  // Open courtyard spaces
+  const courtCount = randomInt(massing.rng, 1, 3);
+  for (let i = 0; i < courtCount; i++) {
+    massing.openSpaces.push({
+      x: (massing.rng() - 0.5) * matW * 0.5,
+      z: (massing.rng() - 0.5) * matL * 0.5,
+      w: matW * (0.12 + massing.rng() * 0.10),
+      l: matL * (0.10 + massing.rng() * 0.10),
+      label: '\u5185\u9662' + (i + 1),
+    });
+  }
+  massing.notes.push('\u6c34\u5e73\u5ef6\u5c55\u7684\u5927\u5730\u5efa\u7b51\uff0c\u591a\u5c42\u5e73\u53f0\u9519\u843d\uff0c\u5c40\u90e8\u706f\u5854\u70b9\u7f00\u3002');
+}
+
+function createGraduatedSetback(massing, buildableW, buildableL) {
+  // Many fine-grained tiers with consistent step ratio
+  const tiers = clamp(randomInt(massing.rng, 5, 9), 5, 9);
+  const stepRatio = 0.06 + massing.rng() * 0.05; // 6-11% shrinkage per tier
+  const baseW = clamp(Math.sqrt(massing.footprint * (1.0 + massing.rng() * 0.3)), buildableW * 0.42, buildableW * 0.78);
+  const baseL = clamp(massing.footprint / baseW, buildableL * 0.34, buildableL * 0.70);
+  const floorsPerTier = Math.max(1, Math.round(massing.floors / tiers));
+  
+  for (let i = 0; i < tiers; i++) {
+    const frac = Math.pow(1 - stepRatio, i);
+    const w = Math.max(7, baseW * frac);
+    const l = Math.max(7, baseL * frac);
+    const tFloors = i === tiers - 1 ? Math.max(1, massing.floors - floorsPerTier * (tiers - 1)) : floorsPerTier;
+    const shiftX = (massing.rng() - 0.5) * baseW * stepRatio * i * 0.6;
+    const shiftZ = (massing.rng() - 0.5) * baseL * stepRatio * i * 0.6;
+    addBlock(massing, {
+      x: shiftX, z: shiftZ,
+      w, l,
+      floors: tFloors,
+      yBase: i * floorsPerTier * massing.floorHeight,
+      floorStart: i * floorsPerTier,
+      label: '\u7ea7' + (i + 1),
+      roof: i === tiers - 1 ? massing.roofType : 'terrace',
+      isSetback: i > 0,
+    });
+  }
+  massing.notes.push('\u9010\u5c42\u9012\u9000\u7684\u7cbe\u7ec6\u6536\u5206\uff0c' + tiers + '\u7ea7\u53f0\u5730\u6bcf\u5c42\u5747\u5300\u7f29\u51cf\u3002');
+}
+
+function createWaistedTower(massing, buildableW, buildableL) {
+  // Tower that narrows at mid-height, may flare at top
+  const baseW = clamp(Math.sqrt(massing.footprint * (0.45 + massing.rng() * 0.15)), buildableW * 0.18, buildableW * 0.38);
+  const baseL = clamp(massing.footprint / baseW, buildableL * 0.16, buildableL * 0.34);
+  
+  const waistRatio = 0.60 + massing.rng() * 0.18; // waist is 60-78% of base width
+  const waistHeight = 0.35 + massing.rng() * 0.20; // waist occurs at 35-55% of height
+  const crownFlare = massing.rng() > 0.5 ? (1.0 + massing.rng() * 0.25) : 1.0; // top may flare 100-125%
+  
+  const waistF = Math.round(massing.floors * waistHeight);
+  const upperF = massing.floors - waistF;
+  const crownF = clamp(Math.round(upperF * 0.3), 2, Math.min(8, upperF - 1));
+  const midF = upperF - crownF;
+  
+  // Base section
+  addBlock(massing, {
+    x: 0, z: 0,
+    w: baseW, l: baseL,
+    floors: waistF,
+    label: '\u57fa\u5ea7\u6bb5',
+    roof: 'terrace',
+  });
+  
+  // Waist (narrowest section)
+  const waistW = baseW * waistRatio;
+  const waistL = baseL * waistRatio;
+  addBlock(massing, {
+    x: 0, z: 0,
+    w: waistW, l: waistL,
+    floors: midF,
+    floorStart: waistF,
+    yBase: waistF * massing.floorHeight,
+    label: '\u6536\u8170\u6bb5',
+    isSetback: true,
+  });
+  
+  // Crown (may flare out)
+  if (crownF > 0) {
+    const crownW = waistW * crownFlare;
+    const crownL = waistL * crownFlare;
+    addBlock(massing, {
+      x: 0, z: 0,
+      w: crownW, l: crownL,
+      floors: crownF,
+      floorStart: waistF + midF,
+      yBase: (waistF + midF) * massing.floorHeight,
+      label: crownFlare > 1.05 ? '\u51a0\u90e8\u6269\u5c55' : '\u9876\u90e8\u6536\u675f',
+      roof: massing.roofType,
+      isSetback: crownFlare <= 1.05,
+    });
+  }
+  
+  massing.notes.push('\u6536\u8170\u5854\u697c\u4e2d\u6bb5\u6536\u7a84\uff0c' + (crownFlare > 1.05 ? '\u9876\u90e8\u6269\u5c55\u5f62\u6210\u89c2\u666f\u5e73\u53f0\u3002' : '\u9876\u90e8\u7ee7\u7eed\u6536\u675f\u3002'));
+}
+
+function addCrossInsert(massing, buildableW, buildableL, index) {
+  const long = randomBetween(massing.rng, buildableW * 0.35, buildableW * 0.82);
+  const depth = clamp(randomBetween(massing.rng, massing.rules.minDepth * 0.8, massing.rules.maxDepth * 1.2), 9, buildableL * 0.32);
+  const horizontal = massing.rng() > 0.5;
+  addBlock(massing, {
+    x: randomBetween(massing.rng, -buildableW * 0.16, buildableW * 0.16),
+    z: randomBetween(massing.rng, -buildableL * 0.16, buildableL * 0.16),
+    w: horizontal ? long : depth,
+    l: horizontal ? depth : long,
+    floors: randomInt(massing.rng, 2, Math.max(2, massing.floors)),
+    yBase: 0,
+    label: `随机穿插 ${index + 1}`,
+    roof: pick(massing.rng, ["flat", "green", "terrace", massing.roofType]),
+  });
+}
+
+function addHighInsert(massing, buildableW, buildableL, index) {
+  const floors = randomInt(massing.rng, Math.max(2, Math.floor(massing.floors * 0.35)), Math.max(2, massing.floors));
+  addBlock(massing, {
+    x: randomBetween(massing.rng, -buildableW * 0.28, buildableW * 0.28),
+    z: randomBetween(massing.rng, -buildableL * 0.28, buildableL * 0.28),
+    w: randomBetween(massing.rng, massing.rules.minDepth, Math.min(buildableW * 0.26, massing.rules.maxDepth * 1.3)),
+    l: randomBetween(massing.rng, massing.rules.minDepth, Math.min(buildableL * 0.28, massing.rules.maxDepth * 1.35)),
+    floors,
+    label: `竖向插入 ${index + 1}`,
+    roof: pick(massing.rng, ["flat", "green", massing.roofType]),
+  });
+}
+
+function addLowMat(massing, buildableW, buildableL, index) {
+  addBlock(massing, {
+    x: randomBetween(massing.rng, -buildableW * 0.18, buildableW * 0.18),
+    z: randomBetween(massing.rng, -buildableL * 0.18, buildableL * 0.18),
+    w: randomBetween(massing.rng, buildableW * 0.22, buildableW * 0.58),
+    l: randomBetween(massing.rng, buildableL * 0.1, buildableL * 0.32),
+    floors: randomInt(massing.rng, 1, Math.max(2, Math.min(5, massing.floors))),
+    label: `低层基底 ${index + 1}`,
+    roof: pick(massing.rng, ["terrace", "green", "flat"]),
+  });
+}
+
+function addCantileverPiece(massing, buildableW, buildableL, index) {
+  const start = randomInt(massing.rng, 1, Math.max(1, Math.floor(massing.floors * 0.72)));
+  addBlock(massing, {
+    x: randomBetween(massing.rng, -buildableW * 0.22, buildableW * 0.22),
+    z: randomBetween(massing.rng, -buildableL * 0.22, buildableL * 0.22),
+    w: randomBetween(massing.rng, buildableW * 0.22, buildableW * 0.55),
+    l: randomBetween(massing.rng, buildableL * 0.08, buildableL * 0.22),
+    floors: randomInt(massing.rng, 1, Math.max(2, Math.ceil(massing.floors * 0.28))),
+    yBase: start * massing.floorHeight,
+    floorStart: start,
+    label: `悬挑盒子 ${index + 1}`,
+    roof: pick(massing.rng, ["flat", "terrace", massing.roofType]),
+    isSetback: true,
+  });
+}
+
+function addSetbackStack(massing, buildableW, buildableL, index) {
+  const floors = randomInt(massing.rng, 1, Math.max(2, Math.ceil(massing.floors * 0.25)));
+  const start = randomInt(massing.rng, 0, Math.max(1, Math.floor(massing.floors * 0.68)));
+  addBlock(massing, {
+    x: randomBetween(massing.rng, -buildableW * 0.18, buildableW * 0.18),
+    z: randomBetween(massing.rng, -buildableL * 0.18, buildableL * 0.18),
+    w: randomBetween(massing.rng, buildableW * 0.14, buildableW * 0.42),
+    l: randomBetween(massing.rng, buildableL * 0.08, buildableL * 0.26),
+    floors,
+    yBase: start * massing.floorHeight,
+    floorStart: start,
+    label: `退台插块 ${index + 1}`,
+    roof: "terrace",
+    isSetback: true,
+  });
+}
+
+function addTowerPiece(massing, buildableW, buildableL, index) {
+  const side = randomBetween(massing.rng, massing.rules.minDepth, Math.min(buildableW, buildableL) * 0.24);
+  addBlock(massing, {
+    x: randomBetween(massing.rng, -buildableW * 0.32, buildableW * 0.32),
+    z: randomBetween(massing.rng, -buildableL * 0.32, buildableL * 0.32),
+    w: side * randomBetween(massing.rng, 0.8, 1.3),
+    l: side * randomBetween(massing.rng, 0.8, 1.3),
+    floors: randomInt(massing.rng, Math.max(2, Math.floor(massing.floors * 0.38)), Math.max(2, massing.floors)),
+    label: `点式塔体 ${index + 1}`,
+    roof: pick(massing.rng, ["flat", "green", massing.roofType]),
+  });
+}
+
+function addBridgePiece(massing, buildableW, buildableL, index) {
+  const start = randomInt(massing.rng, 1, Math.max(1, Math.floor(massing.floors * 0.7)));
+  addBlock(massing, {
+    x: randomBetween(massing.rng, -buildableW * 0.08, buildableW * 0.08),
+    z: randomBetween(massing.rng, -buildableL * 0.22, buildableL * 0.22),
+    w: randomBetween(massing.rng, buildableW * 0.28, buildableW * 0.62),
+    l: randomBetween(massing.rng, massing.rules.minDepth * 0.45, massing.rules.minDepth * 0.85),
+    floors: randomInt(massing.rng, 1, 3),
+    yBase: start * massing.floorHeight,
+    floorStart: start,
+    label: `空中连接 ${index + 1}`,
+    roof: "flat",
+  });
+}
+
+function addVoidPiece(massing, buildableW, buildableL) {
+  massing.openSpaces.push({
+    x: randomBetween(massing.rng, -buildableW * 0.2, buildableW * 0.2),
+    z: randomBetween(massing.rng, -buildableL * 0.2, buildableL * 0.2),
+    w: randomBetween(massing.rng, buildableW * 0.1, buildableW * 0.24),
+    l: randomBetween(massing.rng, buildableL * 0.08, buildableL * 0.22),
+    label: pick(massing.rng, ["入口广场", "内凹庭院", "架空空隙", "光井"]),
+  });
+}
+
+function setupScene() {
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color("#eef2f4");
+
+  const initW = Math.max(canvasHost.clientWidth || 800, 400);
+  const initH = Math.max(canvasHost.clientHeight || 600, 300);
+  camera = new THREE.PerspectiveCamera(45, initW / initH, 0.1, 5000);
+  camera.position.set(180, 150, 210);
+
+  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, preserveDrawingBuffer: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(initW, initH);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.02;
+  canvasHost.appendChild(renderer.domElement);
+
+  controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.target.set(0, 24, 0);
+
+  scene.add(new THREE.HemisphereLight("#f9f6f0", "#8b959d", 1.7));
+  const sun = new THREE.DirectionalLight("#fffdf7", 3.2);
+  sun.position.set(180, 280, 120);
+  sun.castShadow = true;
+  sun.shadow.mapSize.width = 4096;
+  sun.shadow.mapSize.height = 4096;
+  sun.shadow.camera.near = 1;
+  sun.shadow.camera.far = 1200;
+  sun.shadow.camera.left = -280;
+  sun.shadow.camera.right = 280;
+  sun.shadow.camera.top = 280;
+  sun.shadow.camera.bottom = -280;
+  sun.shadow.bias = -0.0004;
+  sun.shadow.normalBias = 0.02;
+  scene.add(sun);
+
+  const grid = new THREE.GridHelper(700, 28, "#94a3b8", "#d0d7de");
+  grid.position.y = -0.02;
+  scene.add(grid);
+
+  window.addEventListener("resize", resizeScene);
+  resizeObserver = new ResizeObserver(resizeScene);
+  resizeObserver.observe(canvasHost);
+  requestAnimationFrame(resizeScene);
+  animate();
+}
+
+function resizeScene() {
+  if (!renderer) return;
+  const width = Math.max(1, canvasHost.clientWidth);
+  const height = Math.max(1, canvasHost.clientHeight);
+  camera.aspect = width / height;
+  camera.updateProjectionMatrix();
+  renderer.setSize(width, height, false);
+}
+
+function clearCurrentGroup() {
+  if (!currentGroup) return;
+  scene.remove(currentGroup);
+  currentGroup.traverse((object) => {
+    if (object.geometry) object.geometry.dispose();
+    if (object.material) object.material.dispose();
+  });
+}
+
+function makeSiteShape(points) {
+  const shape = new THREE.Shape();
+  shape.moveTo(points[0].x, points[0].z);
+  points.slice(1).forEach((point) => shape.lineTo(point.x, point.z));
+  shape.lineTo(points[0].x, points[0].z);
+  return shape;
+}
+
+function drawScheme(scheme) {
+  clearCurrentGroup();
+  currentGroup = new THREE.Group();
+
+  const siteGeometry = new THREE.ShapeGeometry(makeSiteShape(scheme.site.points));
+  const site = new THREE.Mesh(siteGeometry, new THREE.MeshStandardMaterial({ color: "#dfe7df", roughness: 0.88, side: THREE.DoubleSide }));
+  site.rotation.x = -Math.PI / 2;
+  site.receiveShadow = true;
+  currentGroup.add(site);
+
+  const edge = new THREE.LineSegments(new THREE.EdgesGeometry(siteGeometry), new THREE.LineBasicMaterial({ color: "#50645a" }));
+  edge.rotation.x = -Math.PI / 2;
+  edge.position.y = 0.08;
+  currentGroup.add(edge);
+
+  scheme.openSpaces.forEach((space) => {
+    const mesh = new THREE.Mesh(
+      new THREE.BoxGeometry(space.w, 0.3, space.l),
+      new THREE.MeshStandardMaterial({ color: "#8db89b", roughness: 0.75 }),
+    );
+    mesh.position.set(space.x, 0.18, space.z);
+    currentGroup.add(mesh);
+  });
+
+  scheme.blocks.forEach((block) => drawBlock(block, scheme));
+
+  scene.add(currentGroup);
+  const maxDim = Math.max(scheme.siteWidth, scheme.siteLength, scheme.height, 90);
+  camera.position.set(maxDim * 0.92, maxDim * 0.78, maxDim * 1.12);
+  controls.target.set(0, Math.min(55, scheme.height * 0.36), 0);
+  controls.update();
+}
+
+function drawBlock(block, scheme) {
+  const geometry = new THREE.BoxGeometry(block.w, block.h, block.l);
+  const material = new THREE.MeshStandardMaterial({
+    color: block.color,
+    roughness: 0.56,
+    metalness: 0.03,
+  });
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.position.set(block.x, block.yBase + block.h / 2, block.z);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  currentGroup.add(mesh);
+
+  const edges = new THREE.LineSegments(
+    new THREE.EdgesGeometry(geometry),
+    new THREE.LineBasicMaterial({ color: "#1f2937", transparent: true, opacity: 0.22 }),
+  );
+  edges.position.copy(mesh.position);
+  currentGroup.add(edges);
+
+  drawFloorLines(block, scheme);
+  drawRoof(block, scheme);
+  drawStructuralSupports(block, scheme);
+}
+
+
+function getBlockColumns(block, scheme) {
+  // No structural columns - all blocks are grounded or sit on lower blocks
+  return [];
+}
+function drawStructuralSupports(block, scheme) {
+  const cols = getBlockColumns(block, scheme);
+  if (!cols.length) return;
+  const material = new THREE.MeshStandardMaterial({ color: "#4b5563", roughness: 0.72 });
+  cols.forEach((col) => {
+    const geometry = new THREE.CylinderGeometry(col.radius, col.radius, col.columnHeight, 10);
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.position.set(col.x, col.columnHeight / 2, col.z);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    currentGroup.add(mesh);
+  });
+}
+
+function isRestingOnLowerBlock(block, scheme) {
+  return getRestingInfo(block, scheme).supported;
+}
+
+function getRestingInfo(block, scheme) {
+  let maxOverlap = 0;
+  let restingOn = null;
+  scheme.blocks.forEach((other) => {
+    if (other === block) return;
+    const top = other.yBase + other.h;
+    if (Math.abs(top - block.yBase) > 1.5) return;
+    const a = blockRange(block);
+    const b = blockRange(other);
+    const overlapX = Math.min(a.maxX, b.maxX) - Math.max(a.minX, b.minX);
+    const overlapZ = Math.min(a.maxZ, b.maxZ) - Math.max(a.minZ, b.minZ);
+    const overlapArea = Math.max(0, overlapX) * Math.max(0, overlapZ);
+    if (overlapArea > maxOverlap) {
+      maxOverlap = overlapArea;
+      restingOn = other;
+    }
+  });
+  const overlapRatio = block.w * block.l > 0 ? maxOverlap / (block.w * block.l) : 0;
+  return {
+    supported: overlapRatio > 0.15,
+    overlapRatio,
+    restingOn,
+  };
+}
+
+function drawFloorLines(block, scheme) {
+  const step = block.floors > 34 ? 2 : 1;
+  const points = [];
+  for (let floor = step; floor < block.floors; floor += step) {
+    const y = block.yBase + floor * scheme.floorHeight;
+    const x0 = block.x - block.w / 2 - 0.04;
+    const x1 = block.x + block.w / 2 + 0.04;
+    const z0 = block.z - block.l / 2 - 0.04;
+    const z1 = block.z + block.l / 2 + 0.04;
+    points.push(x0, y, z0, x1, y, z0, x1, y, z0, x1, y, z1, x1, y, z1, x0, y, z1, x0, y, z1, x0, y, z0);
+  }
+  if (!points.length) return;
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.Float32BufferAttribute(points, 3));
+  const lines = new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({ color: "#ffffff", transparent: true, opacity: 0.45 }));
+  currentGroup.add(lines);
+}
+
+function drawRoof(block) {
+  const roof = block.roof || "flat";
+  if (roof === "flat") {
+    addRoofSlab(block, "#f4efe3", 0.35);
+    return;
+  }
+  if (roof === "terrace") {
+    addRoofSlab(block, "#d7b86b", 0.42);
+    addParapet(block);
+    return;
+  }
+  if (roof === "green") {
+    addRoofSlab(block, "#79a86f", 0.46);
+    return;
+  }
+  if (roof === "pitched") {
+    const roofMesh = new THREE.Mesh(createGableGeometry(block.w, block.l, Math.min(8, block.h * 0.22)), new THREE.MeshStandardMaterial({ color: "#9b5b49", roughness: 0.7 }));
+    roofMesh.position.set(block.x, block.yBase + block.h + 0.15, block.z);
+    roofMesh.castShadow = true;
+    currentGroup.add(roofMesh);
+    return;
+  }
+  if (roof === "sawtooth") {
+    const count = clamp(Math.round(block.w / 18), 2, 6);
+    for (let i = 0; i < count; i += 1) {
+      const segmentW = block.w / count;
+      const roofMesh = new THREE.Mesh(createGableGeometry(segmentW * 0.92, block.l, Math.min(5, block.h * 0.16)), new THREE.MeshStandardMaterial({ color: "#b8c2c7", roughness: 0.62 }));
+      roofMesh.position.set(block.x - block.w / 2 + segmentW * (i + 0.5), block.yBase + block.h + 0.15, block.z);
+      currentGroup.add(roofMesh);
+    }
+  }
+}
+
+function addRoofSlab(block, color, thickness) {
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(block.w * 1.02, thickness, block.l * 1.02), new THREE.MeshStandardMaterial({ color, roughness: 0.72 }));
+  mesh.position.set(block.x, block.yBase + block.h + thickness / 2, block.z);
+  mesh.castShadow = true;
+  currentGroup.add(mesh);
+}
+
+function addParapet(block) {
+  const h = 0.7;
+  const t = 0.5;
+  const pieces = [
+    { w: block.w + t, l: t, x: block.x, z: block.z - block.l / 2 },
+    { w: block.w + t, l: t, x: block.x, z: block.z + block.l / 2 },
+    { w: t, l: block.l + t, x: block.x - block.w / 2, z: block.z },
+    { w: t, l: block.l + t, x: block.x + block.w / 2, z: block.z },
+  ];
+  pieces.forEach((piece) => {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(piece.w, h, piece.l), new THREE.MeshStandardMaterial({ color: "#c7b77a", roughness: 0.8 }));
+    mesh.position.set(piece.x, block.yBase + block.h + h / 2, piece.z);
+    currentGroup.add(mesh);
+  });
+}
+
+function createGableGeometry(width, length, height) {
+  const w = width / 2;
+  const l = length / 2;
+  const vertices = new Float32Array([
+    -w, 0, -l, w, 0, -l, 0, height, -l,
+    -w, 0, l, 0, height, l, w, 0, l,
+    -w, 0, -l, -w, 0, l, 0, height, l,
+    -w, 0, -l, 0, height, l, 0, height, -l,
+    w, 0, -l, 0, height, -l, 0, height, l,
+    w, 0, -l, 0, height, l, w, 0, l,
+    -w, 0, -l, -w, 0, l, w, 0, l,
+    -w, 0, -l, w, 0, l, w, 0, -l,
+  ]);
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.BufferAttribute(vertices, 3));
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+function animate() {
+  animationId = requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+function getInput() {
+  const data = new FormData(form);
+  return {
+    type: data.get("type"),
+    buildingArea: Number(data.get("buildingArea")),
+    siteArea: Number(data.get("siteArea")),
+    siteRatio: Number(data.get("siteRatio")),
+    siteMode: data.get("siteMode"),
+    sitePoints: [...state.sitePoints],
+    floorMode: data.get("floorMode"),
+    manualFloors: Number(data.get("manualFloors")) || 0,
+    manualHeight: Number(data.get("manualHeight")) || 0,
+    roofType: data.get("roofType"),
+    seed: state.seed,
+  };
+}
+
+function applyInput(input) {
+  Object.assign(state, input);
+  state.generated = generateSchemes(state, INITIAL_SCHEME_COUNT, 0);
+  state.schemeCursor = state.generated.length;
+  state.optionIndex = 0;
+  renderAll();
+}
+
+function appendMoreSchemes() {
+  Object.assign(state, getInput());
+  const more = generateSchemes(state, MORE_SCHEME_COUNT, state.schemeCursor);
+  state.generated.push(...more);
+  state.schemeCursor += more.length;
+  renderAll();
+  const active = optionList.querySelector(".option.active");
+  active?.scrollIntoView({ block: "nearest" });
+}
+
+function renderAll() {
+  const selected = state.generated[state.optionIndex];
+  if (!selected) return;
+  renderMetrics(selected);
+  renderOptions();
+  drawScheme(selected);
+  schemeTitle.textContent = selected.name;
+  schemeSubtitle.textContent = `${BUILDING_RULES[selected.type].label} / ${formName(selected.form)} / ${selected.floors} 层 / ${ROOF_LABELS[selected.roofType]}`;
+  infoStrip.innerHTML = `
+    <span>建筑面积 <b>${formatNumber(selected.buildingArea)}</b> m²</span>
+    <span>占地 <b>${formatNumber(selected.footprint)}</b> m²</span>
+    <span>建筑高度 <b>${formatNumber(selected.height)}</b> m</span>
+    <span>${selected.notes[0]}</span>
+  `;
+}
+
+function renderMetrics(scheme) {
+  metricsEl.innerHTML = `
+    <article>
+      <span>容积率</span>
+      <strong>${formatNumber(scheme.far)}</strong>
+    </article>
+    <article>
+      <span>覆盖率</span>
+      <strong>${formatNumber(scheme.coverage * 100)}%</strong>
+    </article>
+    <article>
+      <span>层数 / 高度</span>
+      <strong>${scheme.floors}F / ${formatNumber(scheme.height)}m</strong>
+    </article>
+    <article>
+      <span>基地包络</span>
+      <strong>${formatNumber(scheme.siteLength)} × ${formatNumber(scheme.siteWidth)}</strong>
+    </article>
+  `;
+}
+
+function renderOptions() {
+  optionList.innerHTML = "";
+  state.generated.forEach((scheme, index) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `option ${index === state.optionIndex ? "active" : ""}`;
+    button.innerHTML = `
+      <span>
+        <strong>${scheme.name}</strong>
+        <em>${formName(scheme.form)} · ${scheme.blocks.length} 个体量 · ${scheme.detailTags.join(" / ")}</em>
+      </span>
+      <b>${scheme.floors}F</b>
+    `;
+    button.addEventListener("click", () => {
+      state.optionIndex = index;
+      renderAll();
+    });
+    optionList.appendChild(button);
+  });
+  const counter = document.createElement("div");
+  counter.className = "optionCounter";
+  counter.textContent = `已生成 ${state.generated.length} 个方案，可继续追加`;
+  optionList.appendChild(counter);
+}
+
+function formName(form) {
+  const names = {
+    slab: "板式",
+    bar: "条形",
+    tower: "塔楼基座",
+    podium: "连续退台",
+    atrium: "中庭错落",
+    courtyard: "院落围合",
+    cluster: "错落组团",
+    podiumTower: "裙房塔楼",
+    interlock: "穿插体量",
+    cantilever: "悬挑体量",
+    stepped: "退台堆叠",
+    bridge: "双塔连桥",
+    lShape: "L形转角",
+    uShape: "U形围合",
+    twinTower: "双塔并置",
+    pointBlock: "点式独栋",
+    cascade: "跌落退台",
+    ziggurat: "阶梯收分",
+    hybrid: "混合叠合",
+    perimeterBlock: "周边街区",
+    freeMix: "自由混合",
+    multiInterlock: "多重穿插",
+    porousMat: "多孔基底",
+    cantileverChain: "连续悬挑",
+    pinwheel: "风车穿插",
+    terraceVillage: "台地聚落",
+    rotatedCluster: "旋转簇群",
+    slicedStack: "切片堆叠",
+    foldedPlate: "折板造型",
+    splitTower: "双塔基座",
+  };
+  return names[form] || form;
+}
+
+
+function exportSTL() {
+  const scheme = state.generated[state.optionIndex];
+  if (!scheme) return;
+  const NL = "\n";
+  const SEGS = 12;
+  let stl = "solid massing_" + scheme.name.replace(/ /g, "_") + NL;
+
+  // Helper to add a triangle to STL
+  function addTri(ax, ay, az, bx, by, bz, cx, cy, cz) {
+    const ux=bx-ax, uy=by-ay, uz=bz-az;
+    const wx=cx-ax, wy=cy-ay, wz=cz-az;
+    const nx=uy*wz-uz*wy, ny=uz*wx-ux*wz, nz=ux*wy-uy*wx;
+    const len=Math.sqrt(nx*nx+ny*ny+nz*nz)||1;
+    stl += "  facet normal " + (nx/len).toFixed(6) + " " + (nz/len).toFixed(6) + " " + (ny/len).toFixed(6) + NL;
+    stl += "    outer loop" + NL;
+    stl += "      vertex " + ax.toFixed(4) + " " + az.toFixed(4) + " " + ay.toFixed(4) + NL;
+    stl += "      vertex " + bx.toFixed(4) + " " + bz.toFixed(4) + " " + by.toFixed(4) + NL;
+    stl += "      vertex " + cx.toFixed(4) + " " + cz.toFixed(4) + " " + cy.toFixed(4) + NL;
+    stl += "    endloop" + NL;
+    stl += "  endfacet" + NL;
+  }
+
+  scheme.blocks.forEach((block) => {
+    const hw = block.w / 2, hl = block.l / 2;
+    const y0 = block.yBase, y1 = block.yBase + block.h;
+    const x0 = block.x - hw, x1 = block.x + hw;
+    const z0 = block.z - hl, z1 = block.z + hl;
+    const v = [
+      [x0,y0,z0],[x1,y0,z0],[x1,y1,z0],[x0,y1,z0],
+      [x0,y0,z1],[x1,y0,z1],[x1,y1,z1],[x0,y1,z1],
+    ];
+    const tris = [
+      [0,1,2],[0,2,3],[1,5,6],[1,6,2],
+      [5,4,7],[5,7,6],[4,0,3],[4,3,7],
+      [3,2,6],[3,6,7],[4,5,1],[4,1,0],
+    ];
+    tris.forEach(t => {
+      const a=v[t[0]],b=v[t[1]],c=v[t[2]];
+      addTri(a[0],a[1],a[2],b[0],b[1],b[2],c[0],c[1],c[2]);
+    });
+
+    // Add columns for this block
+    const cols = getBlockColumns(block, scheme);
+    cols.forEach(col => {
+      const r = col.radius;
+      const h = col.columnHeight;
+      const cx2 = col.x, cz2 = col.z;
+      const botY = 0, topY = h;
+      // Generate circle points
+      const pts = [];
+      for (let i = 0; i < SEGS; i++) {
+        const a = (Math.PI * 2 * i) / SEGS;
+        pts.push([cx2 + Math.cos(a) * r, cz2 + Math.sin(a) * r]);
+      }
+      // Side triangles
+      for (let i = 0; i < SEGS; i++) {
+        const j = (i + 1) % SEGS;
+        addTri(pts[i][0], botY, pts[i][1], pts[j][0], botY, pts[j][1], pts[j][0], topY, pts[j][1]);
+        addTri(pts[i][0], botY, pts[i][1], pts[j][0], topY, pts[j][1], pts[i][0], topY, pts[i][1]);
+      }
+      // Top and bottom fans
+      for (let i = 1; i < SEGS - 1; i++) {
+        addTri(pts[0][0], botY, pts[0][1], pts[i][0], botY, pts[i][1], pts[i+1][0], botY, pts[i+1][1]);
+        addTri(pts[0][0], topY, pts[0][1], pts[i+1][0], topY, pts[i+1][1], pts[i][0], topY, pts[i][1]);
+      }
+    });
+  });
+  stl += "endsolid massing_" + scheme.name.replace(/ /g, "_") + NL;
+  const blob = new Blob([stl], { type: "model/stl" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "massing-" + scheme.name.replace(/ /g, "-") + ".stl";
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+
+
+function renderSketch() {
+  const pointText = state.sitePoints.map((point) => `${point.x},${point.y}`).join(" ");
+  siteSketch.innerHTML = `
+    <rect x="1" y="1" width="358" height="218" rx="8"></rect>
+    <polyline points="${pointText}" class="sketchLine"></polyline>
+    ${state.sitePoints.map((point, index) => `<circle data-index="${index}" cx="${point.x}" cy="${point.y}" r="${index === state.selectedSitePoint ? 7 : 5}" class="${index === state.selectedSitePoint ? "selected" : ""}"></circle><text x="${point.x + 8}" y="${point.y - 8}">${index + 1}</text>`).join("")}
+  `;
+}
+
+function sketchPointFromEvent(event) {
+  const rect = siteSketch.getBoundingClientRect();
+  return {
+    x: clamp(((event.clientX - rect.left) / rect.width) * 360, 8, 352),
+    y: clamp(((event.clientY - rect.top) / rect.height) * 220, 8, 212),
+  };
+}
+
+function refreshFromSketchEdit() {
+  renderSketch();
+  if (new FormData(form).get("siteMode") === "free" && state.sitePoints.length >= 3) {
+    applyInput(getInput());
+  }
+}
+
+function updateSiteMode() {
+  const mode = new FormData(form).get("siteMode");
+  siteEditor.hidden = mode !== "free";
+  ratioControl.hidden = mode === "free";
+}
+
+form.addEventListener("submit", (event) => {
+  event.preventDefault();
+  applyInput(getInput());
+});
+
+form.siteRatio.addEventListener("input", () => {
+  ratioOut.value = Number(form.siteRatio.value).toFixed(2);
+});
+
+form.querySelectorAll('input[name="siteMode"]').forEach((radio) => {
+  radio.addEventListener("change", () => {
+    updateSiteMode();
+    applyInput(getInput());
+  });
+});
+
+siteSketch.addEventListener("pointerdown", (event) => {
+  const target = event.target.closest?.("circle[data-index]");
+  if (target) {
+    state.selectedSitePoint = Number(target.dataset.index);
+  } else {
+    state.sitePoints.push(sketchPointFromEvent(event));
+    state.selectedSitePoint = state.sitePoints.length - 1;
+  }
+  state.draggingSitePoint = true;
+  siteSketch.setPointerCapture?.(event.pointerId);
+  refreshFromSketchEdit();
+});
+
+siteSketch.addEventListener("pointermove", (event) => {
+  if (!state.draggingSitePoint || state.selectedSitePoint < 0) return;
+  state.sitePoints[state.selectedSitePoint] = sketchPointFromEvent(event);
+  refreshFromSketchEdit();
+});
+
+siteSketch.addEventListener("pointerup", (event) => {
+  state.draggingSitePoint = false;
+  siteSketch.releasePointerCapture?.(event.pointerId);
+  refreshFromSketchEdit();
+});
+
+window.addEventListener("keydown", (event) => {
+  if (!["Delete", "Backspace"].includes(event.key)) return;
+  if (state.selectedSitePoint < 0 || state.sitePoints.length <= 3) return;
+  const active = document.activeElement;
+  if (active && ["INPUT", "SELECT", "TEXTAREA"].includes(active.tagName)) return;
+  state.sitePoints.splice(state.selectedSitePoint, 1);
+  state.selectedSitePoint = Math.min(state.selectedSitePoint, state.sitePoints.length - 1);
+  refreshFromSketchEdit();
+});
+
+document.querySelector("#resetSiteButton").addEventListener("click", () => {
+  state.sitePoints = [];
+  state.selectedSitePoint = -1;
+  renderSketch();
+  applyInput(getInput());
+});
+
+document.querySelector("#shuffleButton").addEventListener("click", () => {
+  state.seed += 13;
+  applyInput(getInput());
+});
+
+document.querySelector("#loadMoreButton").addEventListener("click", () => {
+  state.seed += 29;
+  appendMoreSchemes();
+});
+
+
+  document.querySelector("#exportStlButton").addEventListener("click", exportSTL);
+
+renderSketch();
+updateSiteMode();
+setupScene();
+applyInput(getInput());
+
+window.addEventListener("beforeunload", () => {
+  cancelAnimationFrame(animationId);
+  resizeObserver?.disconnect();
+});
+
+  </script>
+</body>
+</html>
