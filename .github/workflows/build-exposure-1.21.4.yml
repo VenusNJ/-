@@ -28,6 +28,8 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
+          cache: gradle
+          cache-dependency-path: exposure-src/**/*.gradle*
 
       - name: Configure target versions
         working-directory: exposure-src
@@ -45,7 +47,7 @@ jobs:
               "parchment_version=1.21.1:2024.11.17": "parchment_version=1.21.4:2025.03.23",
               "fabric_loader_version=0.16.9": "fabric_loader_version=0.16.10",
               "fabric_api_version=0.102.1+1.21.1": "fabric_api_version=0.119.4+1.21.4",
-              "forge_config_api_port_version=21.1.0": "forge_config_api_port_version=21.4.1.1",
+              "forge_config_api_port_version=21.1.0": "forge_config_api_port_version=21.4.1",
           }
           for old, new in replacements.items():
               if old not in s:
@@ -57,6 +59,10 @@ jobs:
       - name: Build Fabric mod
         working-directory: exposure-src
         run: ./gradlew --no-daemon :fabric:remapJar
+
+      - name: Show build outputs
+        if: always()
+        run: find exposure-src/fabric/build/libs -maxdepth 1 -type f -printf '%f\n' 2>/dev/null || true
 
       - name: Upload remapped mod JAR
         uses: actions/upload-artifact@v4
