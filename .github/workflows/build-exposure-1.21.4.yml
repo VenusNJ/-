@@ -58,7 +58,9 @@ jobs:
 
       - name: Build Fabric mod
         working-directory: exposure-src
-        run: ./gradlew --no-daemon :fabric:remapJar
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon :fabric:remapJar
 
       - name: Show build outputs
         if: always()
