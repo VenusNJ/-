@@ -48,6 +48,7 @@ jobs:
               "fabric_loader_version=0.16.9": "fabric_loader_version=0.16.10",
               "fabric_api_version=0.102.1+1.21.1": "fabric_api_version=0.119.4+1.21.4",
               "forge_config_api_port_version=21.1.0": "forge_config_api_port_version=21.4.1",
+              "jei_version=19.19.0.220": "jei_version=20.0.0.4",
           }
           for old, new in replacements.items():
               if old not in s:
