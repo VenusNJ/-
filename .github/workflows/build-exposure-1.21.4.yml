@@ -57,6 +57,22 @@ jobs:
           p.write_text(s)
           PY
 
+      - name: Disable unsupported JEI integration on Fabric 1.21.4
+        working-directory: exposure-src
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("fabric/build.gradle")
+          s = p.read_text()
+          s = "\n".join(line for line in s.splitlines()
+                         if "modCompileOnlyApi(\"mezz.jei:" not in line
+                         and "modRuntimeOnly(\"mezz.jei:" not in line) + "\n"
+          p.write_text(s)
+          PY
+          rm -rf common/src/main/java/io/github/mortuusars/exposure/integration/jei
+          rm -rf fabric/src/main/java/io/github/mortuusars/exposure/integration/jei
+
       - name: Build Fabric mod
         working-directory: exposure-src
         run: |
