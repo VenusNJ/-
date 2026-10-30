@@ -74,3 +74,5 @@ jobs:
           path: exposure-src/fabric/build/libs/*-fabric-1.21.4.jar
           if-no-files-found: error
           retention-days: 14
+
+# Dependency pin: JEI 20.0.0.4 is the published 1.21.4 API line.
