@@ -1,0 +1,78 @@
+name: Build Exposure for Minecraft 1.21.4 (Fabric)
+
+on:
+  push:
+    branches:
+      - exposure-fabric-1.21.4
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout build workflow
+        uses: actions/checkout@v4
+
+      - name: Checkout Exposure source
+        uses: actions/checkout@v4
+        with:
+          repository: mortuusars/Exposure
+          ref: 1.21.1
+          path: exposure-src
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+          cache-dependency-path: exposure-src/**/*.gradle*
+
+      - name: Configure target versions
+        working-directory: exposure-src
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("gradle.properties")
+          s = p.read_text()
+          replacements = {
+              "enabled_platforms=fabric,neoforge": "enabled_platforms=fabric",
+              "minecraft_version=1.21.1": "minecraft_version=1.21.4",
+              "minecraft_version_range=[1.21,)": "minecraft_version_range=[1.21.4,)",
+              "supported_minecraft_versions=1.21,1.21.1": "supported_minecraft_versions=1.21.4",
+              "parchment_version=1.21.1:2024.11.17": "parchment_version=1.21.4:2025.03.23",
+              "fabric_loader_version=0.16.9": "fabric_loader_version=0.16.10",
+              "fabric_api_version=0.102.1+1.21.1": "fabric_api_version=0.119.4+1.21.4",
+              "forge_config_api_port_version=21.1.0": "forge_config_api_port_version=21.4.1",
+              "jei_version=19.19.0.220": "jei_version=20.0.0.4",
+          }
+          for old, new in replacements.items():
+              if old not in s:
+                  raise SystemExit(f"Expected setting not found: {old}")
+              s = s.replace(old, new, 1)
+          p.write_text(s)
+          PY
+
+      - name: Build Fabric mod
+        working-directory: exposure-src
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon :fabric:remapJar
+
+      - name: Show build outputs
+        if: always()
+        run: find exposure-src/fabric/build/libs -maxdepth 1 -type f -printf '%f\n' 2>/dev/null || true
+
+      - name: Upload remapped mod JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: exposure-fabric-1.21.4
+          path: exposure-src/fabric/build/libs/*-fabric-1.21.4.jar
+          if-no-files-found: error
+          retention-days: 14
+
+# Dependency pin: JEI 20.0.0.4 is the published 1.21.4 API line.
